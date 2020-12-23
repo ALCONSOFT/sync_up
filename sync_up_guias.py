@@ -7,17 +7,83 @@ from openpyxl import Workbook
 import xlsxwriter
 from datetime import datetime
 
-# ODOO 14
+def mi_proveedor(url, db, uid, password, l_prov):
+    import xmlrpc.client
+    # Calliing methods
+    models_prov = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_prov.execute_kw(db, uid, password,
+                     'res.partner', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['name', '=', l_prov.upper()], ['active','=',1]]]  #lista de python
+    registros = models_prov.execute_kw(db, uid, password, 'res.partner', 'search_count', filtro)
+    ids =       models_prov.execute_kw(db, uid, password, 'res.partner', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         #print("Registro : ",  filtro , "No existe!!!")
+         #print("IDS: ", ids)
+         ident = models_prov.execute_kw(db, uid, password, 'res.partner', 'create', [{ 'name': l_prov,
+                                                                                        'active': 1,}])
+         return ident
+        #print("id_Odoo: ", ident)
+    else: return ids[0]
+### Up ##############################################################
+def mi_tipo_equipo(url, db, uid, password, tieq):
+    import xmlrpc.client
+     # Calliing methods
+        
+    models_tieq = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_tieq.execute_kw(db, uid, password,
+                     'fincas_pma.tipo_equipo', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['name', '=', tieq], ['active','=',1]]]  #lista de python
+    registros = models_tieq.execute_kw(db, uid, password, 'fincas_pma.tipo_equipo', 'search_count', filtro)
+    ids =       models_tieq.execute_kw(db, uid, password, 'fincas_pma.tipo_equipo', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         #print("Registro : ",  filtro , "No existe!!!")
+         #print("IDS: ", ids)
+         ident = models_tieq.execute_kw(db, uid, password, 'fincas_pma.tipo_equipo', 'create', [{ 'name': tieq,
+                                                                                        'active': 1,}])
+         return ident
+        #print("id_Odoo: ", ident)
+    else: return ids[0]
+### Up ##############################################################
+def mi_up(url, db, uid, password, l_up):
+    import xmlrpc.client
+     # Calliing methods
+        
+    models_up = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_up.execute_kw(db, uid, password,
+                     'fincas_pma.up', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['code_up', '=', l_up], ['active','=',1]]]  #lista de python
+    registros = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'search_count', filtro)
+    ids =       models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         #print("Registro : ",  filtro , "No existe!!!")
+         #print("IDS: ", ids)
+         ident = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'create', [{ 'name': l_up,
+                                                                                        'active': 1,
+                                                                                        'code_up': l_up,
+                                                                                        'description': l_up}])
+         return ident
+        #print("id_Odoo: ", ident)
+    else: return ids[0]
+#################################################################
+# PROGRAMA PRINCIAPL - ODOO 14
 
-url = "http://odoradita.com:8069"
-db = "test2_CADASA_data"
+#url = "http://odoradita.com:8069"
+#db = "test3_CADASA_main"
+url = "http://localhost:8069"
+db = "t14_CADASA_main"
 username = 'soporte@alconsoft.net'
 password = "2010Sistech"
 max_registros = 501
 
 #Para DOS/Windows
 os.system ("cls")
-print("INICIANDO RUTINA DE SINCRONIZACION DE PROYECTOS")
+print("INICIANDO RUTINA DE SINCRONIZACION DE GUIAS")
 common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
 print("common version: ")
 print(common.version())
@@ -52,74 +118,76 @@ else:
     print("Tipo de Dato:", type([ids]))
     for elemento in ids:
         print("Elemento:", elemento)
-    print("########## FIN DE PRUEBA DE DEPARTAMENTOS ############")
-# - Lectura de registros de Proyectos: DATA MASTER I
-models_proj = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-models_proj.execute_kw(db, uid, password,
-                     'project.project', 'check_access_rights',
-                     ['read'], {'raise_exception': False})
-    
-filtro = [[ ['company_id', '=', 1],['active','=',1]]]  #lista de python
-#ids = models_dep.execute_kw(db, uid, password, 'project.project', 'search_read',
-#    filtro, {'limit': max_registros})
-ids = models_dep.execute_kw(db, uid, password, 'project.project', 'search_read',
-    filtro, {'fields':['id','name','description','active','partner_id','company_id','fincas_pma',
-    'zafra','odc','frente','subfinca','up','lote','has','correg','dist',
-    'desr','ubic','tds','fecha_est_cosecha','tipocorte','variedad','fdc',
-    'fds','hdc','hdq','hasq','tonq','hasv','tonv','tche1','tche2','tche3',
-    'hasc','toncos','tonme','tonrt','tchr','difton','difprc','are','bx',
-    'sac','pza','red','ph','tch_01','dif_01','tch_02','dif_02','tch_03',
-    'dif_03','tch_04','dif_04','dosm','mad','fdam'],'limit': max_registros})
-if ids == 0:
-    print("Sin registros en Proyectos")
-else:
-    print("Se encontraron registros:", ids)
-    print("Cantidad de Registros: ", len(ids))
-    print("Tipo de Dato:", type([ids]))
-    ############# INICIALINZADO PARAMETROS PARA EXCEL
-    wb = Workbook()
-    ruta = 'salida.xlsx'
-    hoja = wb.active
-    hoja.title = "Lista de Proyectos - UPLotes"
-    
-    fila = 1 #Fila donde empezamos
-    col_id = 1 #Columna donde guardamos las fechas
-    col_name = 2 #Columna donde guardamos el dato asociados a cada fecha
-    col_up = 3
-    col_lote = 4
-    fila=1
-    for elemento in ids:
-        #print("Tipo: ", type(elemento))
-        print("Procesndo Fila: ",fila)
-        #print("Elemento:", elemento)
-        nombre_cols = elemento.keys()
-        valores = elemento.values()
-        if fila == 1:
-            print("Imprimiendo Nombre de Columnas", nombre_cols)
-            for val_col in nombre_cols:
-                hoja.cell(column=col_id, row=1, value=val_col)
-                col_id+=1
-        else:
-            print("Imprimiendo Valores de celda...", valores )
-            print("Tipo variable <valores>:",type(valores))
-            col_id = 1
+##########################################################################################################
+# CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
+# SQL SERVER
+cadena_conex1 = "DRIVER={SQL Server};server=mssql.odoradita.com;database=CAMPO;uid=sa;pwd=crsJVA!_02x"
+conexion1 = pyodbc.connect(cadena_conex1)
+cursor1 = conexion1.cursor()
+# - CONSULTA MS-SQL
+#SELECT Secuencia, Ano, FechaHoraCaptura, Placa, Tipo_Equipo, Tipo_Vehiculo, Contrato, Frente, Up, Proveedor, Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema
+#FROM CAMPO.dbo.GUI_GUIA_CANA;
+#
+consulta1a = "SELECT Secuencia, Ano, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
+consulta1b =" Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs "
+consulta1 = consulta1a + consulta1b
+consulta2 = "FROM CAMPO.dbo.GUI_GUIA_CANA"
+consulta3 = " WHERE Dia_Zafra = 1 "
+consulta4 = "ORDER BY Secuencia"
+consulta = consulta1 + consulta2 + consulta3 +consulta4
+print("Consulta MS-SQL: ", consulta)
+cursor1.execute(consulta)
+rows = cursor1.fetchall()
 
-            for val_celda in valores:
-                print("Tipo variable <value>:",type(val_celda))
-                if type(val_celda) is not list:
-                    hoja.cell(column=col_id, row=fila, value=val_celda)
-                    col_id+=1
-                else:
-                    print("Lista Ignorada: ", val_celda)
-                    if val_celda != []:
-                        print("val_celda:", val_celda[1])
-                        hoja.cell(column=col_id, row=fila, value=val_celda[1])
-                    else:
-                        print("valor de lista en celda Ignorado por estar vacio!!!")
-                    col_id+=1
+for row in rows:
+    print(row.Secuencia, row.Ano, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
+    # INSERTAR REGISTROS EN TABLA purchase.order SI NO EXISTE.
+    # print("Tipo de Sec." , type(row.Secuencia))
+    m_secuencia = int(row.Secuencia)
+    #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    m_fechahc = row.FechaHC
+    # Tipo de Equipos
+    m_tipo_equipo = mi_tipo_equipo(url, db, uid, password, row.Tipo_Equipo)
+    # UP
+    m_up = mi_up(url, db, uid, password, row.Up)
+    # Proveedor
+    m_proveedor = mi_proveedor(url, db, uid, password, row.Proveedor)
+    # Bruto, Tara y Neto
+    print("Tipo Bruto: ", type(row.Bruto))
+    #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
+    registros = models.execute_kw(db, uid, password, 'purchase.order', 'search_count', filtro)
+    ids =       models.execute_kw(db, uid, password, 'purchase.order', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+        print("Registro : ",  filtro , "No existe!!!")
+        print("IDS: ", ids)
+        ident = models.execute_kw(db, uid, password, 'purchase.order', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'secuencia_guia': m_secuencia,
+                                                                                'ano': row.Ano,
+                                                                                'zafra': 1,
+                                                                                'fechahc': m_fechahc,
+                                                                                'placa': row.Placa,
+                                                                                'tipo_equipo': m_tipo_equipo,
+                                                                                'contrato': row.Contrato,
+                                                                                'frente': int(row.Frente),
+                                                                                'up': m_up,
+                                                                                'lote': row.Subdiv,
+                                                                                'origin': row.Ticket,
+                                                                                'tipo_vehiculo': row.Tipo_Vehiculo,
+                                                                                'state': 'purchase',
+                                                                                'fecha_guia': row.Fecha_Guia,
+                                                                                'fecha_quema': row.Fecha_Quema,
+                                                                                'hora_quema': row.Hora_Quema,
+                                                                                'bruto': float(row.Bruto),
+                                                                                'tara': float(row.Tara),
+                                                                                'neto': float(row.Neto_Lbs),
+                                                                                'active': True}])
+    else:
+        print("Si existe registro Secuencia:", m_secuencia)
 
-        fila+=1
+#'zafra': row.Ano,
+print("########## FIN DE PRUEBA DE DEPARTAMENTOS ############")
 
-    print("########## FIN DE IMPRESION DE PROYECTOS ############")
-    wb.save(filename = ruta)
 ############ fin de programa sincronizador ##########
