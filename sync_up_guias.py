@@ -71,16 +71,20 @@ def mi_up(url, db, uid, password, l_up):
         #print("id_Odoo: ", ident)
     else: return ids[0]
 #################################################################
-# PROGRAMA PRINCIAPL - ODOO 14
+# PROGRAMA PRINCIPAL - ODOO 14
 
 #url = "http://odoradita.com:8069"
 #db = "test3_CADASA_main"
-url = "http://localhost:8069"
-db = "t14_CADASA_main"
+url = "http://localhost:10014"
+db = "t14_PU1"
 username = 'soporte@alconsoft.net'
 password = "2010Sistech"
 max_registros = 501
-
+###################################
+import winsound
+freq = 2500 # Set frequency To 2500 Hertz
+dur = 1000 # Set duration To 1000 ms == 1 second
+print("Beep:", winsound.Beep(freq, dur))
 #Para DOS/Windows
 os.system ("cls")
 print("INICIANDO RUTINA DE SINCRONIZACION DE GUIAS")
@@ -98,26 +102,6 @@ models.execute_kw(db, uid, password,
               'res.partner', 'check_access_rights',
               ['read'], {'raise_exception': False})
 
-#Lectura de registros de PRueba de Departamento
-models_dep = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-models_dep.execute_kw(db, uid, password,
-                     'hr.department', 'check_access_rights',
-                     ['read'], {'raise_exception': False})
-    
-filtro = [[ ['company_id', '=', 1],['active','=',1]]]  #lista de python
-#registros = models_dep.execute_kw(db, uid, password, 'hr.department', 'search_count', filtro)
-ids = models_dep.execute_kw(db, uid, password, 'hr.department', 'search_read',
-    filtro, {'fields':['name', 'manager_id'],'limit': max_registros})
-if ids == 0:
-    print("Sin registros")
-else:
-    print("Se encontraron registros:", ids)
-    #[regs] = models_dep.execute_kw(db, uid, password,
-    #    'hr.department', 'read', [ids], {'fields':['name', 'manager_id']})
-    print("Cantidad de Registros: ", len(ids))
-    print("Tipo de Dato:", type([ids]))
-    for elemento in ids:
-        print("Elemento:", elemento)
 ##########################################################################################################
 # CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
 # SQL SERVER
@@ -132,7 +116,7 @@ consulta1a = "SELECT Secuencia, Ano, convert(varchar, FechaHoraCaptura,21) as Fe
 consulta1b =" Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs "
 consulta1 = consulta1a + consulta1b
 consulta2 = "FROM CAMPO.dbo.GUI_GUIA_CANA"
-consulta3 = " WHERE Dia_Zafra = 1 "
+consulta3 = " WHERE Dia_Zafra = 3 "
 consulta4 = "ORDER BY Secuencia"
 consulta = consulta1 + consulta2 + consulta3 +consulta4
 print("Consulta MS-SQL: ", consulta)
@@ -153,14 +137,18 @@ for row in rows:
     # Proveedor
     m_proveedor = mi_proveedor(url, db, uid, password, row.Proveedor)
     # Bruto, Tara y Neto
-    print("Tipo Bruto: ", type(row.Bruto))
+    #print("Tipo Bruto: ", type(row.Bruto))
     #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    # Purchase Order [Encabezado]
+    m_ident = 0
     filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
     registros = models.execute_kw(db, uid, password, 'purchase.order', 'search_count', filtro)
     ids =       models.execute_kw(db, uid, password, 'purchase.order', 'search',       filtro, {'limit': 1})
+    if registros != 0:
+        m_ident = ids[0]
     if registros == 0:
         print("Registro : ",  filtro , "No existe!!!")
-        print("IDS: ", ids)
+        #print("IDS: ", ids)
         ident = models.execute_kw(db, uid, password, 'purchase.order', 'create', [{ 'company_id': 1,
                                                                                 'currency_id': 16,
                                                                                 'partner_id': m_proveedor,
@@ -184,10 +172,48 @@ for row in rows:
                                                                                 'tara': float(row.Tara),
                                                                                 'neto': float(row.Neto_Lbs),
                                                                                 'active': True}])
+        m_ident = ident
+    else:
+        print("Si existe registro Secuencia:", m_secuencia)
+    # Purchase Order line [Detalle]
+    filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
+    registros = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_count', filtro)
+    ids =       models.execute_kw(db, uid, password, 'purchase.order.line', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+        print("Registro : ",  filtro , "No existe!!!")
+        #print("IDS: ", ids)
+        ident = models.execute_kw(db, uid, password, 'purchase.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'secuencia_guia': m_secuencia,
+                                                                                'state': 'purchase',
+                                                                                'bruto': float(row.Bruto),
+                                                                                'tara': float(row.Tara),
+                                                                                'neto': float(row.Neto_Lbs),
+                                                                                'name': '[MP-001] CAÑA DE AZUCAR',
+                                                                                'sequence':10,
+                                                                                'product_qty': float(row.Neto_Lbs)*0.453592,
+                                                                                'product_uom_qty': float(row.Neto_Lbs)*0.453592,
+                                                                                'product_uom': 1,
+                                                                                'product_id': 1,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'company_id': 1,
+                                                                                'state': 'purchase',
+                                                                                'qty_received_method': 'stock_moves',
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'partner_id': m_proveedor,
+                                                                                'currency_id': 16,
+                                                                                'active': True}])
     else:
         print("Si existe registro Secuencia:", m_secuencia)
 
+
 #'zafra': row.Ano,
-print("########## FIN DE PRUEBA DE DEPARTAMENTOS ############")
+print("########## FIN DE RUTINA DE SINCRONIZACION DE GUIAS ############")
 
 ############ fin de programa sincronizador ##########
