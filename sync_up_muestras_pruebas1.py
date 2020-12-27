@@ -6,6 +6,25 @@ from datetime import datetime
 from openpyxl import Workbook
 import xlsxwriter
 from datetime import datetime
+####-PRODUCTO-#######################################################
+def mi_productO(url, db, uid, password, l_defacode, l_name):
+    import xmlrpc.client
+    # Calliing methods
+    models_prod = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_prod.execute_kw(db, uid, password,
+                     'product.template', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['default_code', '=', l_defacode], ['active','=',1]]]  #lista de python
+    registros = models_prod.execute_kw(db, uid, password, 'product.template', 'search_count', filtro)
+    ids =       models_prod.execute_kw(db, uid, password, 'product.template', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         ident = models_prod.execute_kw(db, uid, password, 'product.template', 'create', [{ 'name': l_name,
+                                                                                       'default_code': l_defacode,
+                                                                                       'active': 1,}])
+         return ident
+    else: return ids[0]
+
 ####-PROVEEDOR-######################################################
 def mi_proveedor(url, db, uid, password, l_prov):
     import xmlrpc.client
@@ -186,41 +205,221 @@ for row in rows:
     else:
         print("Si existe registro Secuencia:", m_guia)
     # Purchase Order line [Detalle]
+    
     filtro = [[['guia', '=', m_guia],['active','=',True]]]  #lista de python
     registros = models.execute_kw(db, uid, password, 'sample.order.line', 'search_count', filtro)
     ids =       models.execute_kw(db, uid, password, 'sample.order.line', 'search',       filtro, {'limit': 1})
-    #if registros == 0:
-    #    print("Registro : ",  filtro , "No existe!!!")
-    #    #print("IDS: ", ids)
-    #    ident = models.execute_kw(db, uid, password, 'purchase.order.line', 'create', [{ 'company_id': 1,
-    #                                                                            'currency_id': 16,
-    #                                                                            'partner_id': m_proveedor,
-    #                                                                            'secuencia_guia': m_secuencia,
-    #                                                                            'state': 'purchase',
-    #                                                                            'bruto': float(row.Bruto),
-    #                                                                            'tara': float(row.Tara),
-    #                                                                            'neto': float(row.Neto_Lbs),
-    #                                                                            'name': '[MP-001] CAÑA DE AZUCAR',
-    #                                                                            'sequence':10,
-    #                                                                            'product_qty': float(row.Neto_Lbs)*0.453592,
-    #                                                                            'product_uom_qty': float(row.Neto_Lbs)*0.453592,
-    #                                                                            'product_uom': 1,
-    #                                                                            'product_id': 1,
-    #                                                                            'price_unit': 0.00,
-    #                                                                            'price_subtotal': 0.00,
-    #                                                                            'price_total': 0.00,
-    #                                                                            'price_tax': 0.00,
-    #                                                                            'order_id': m_ident,
-    #                                                                            'company_id': 1,
-    #                                                                            'state': 'purchase',
-    #                                                                            'qty_received_method': 'stock_moves',
-    #                                                                            'qty_received': 0.00,
-    #                                                                            'qty_received_manual': 0.00,
-    #                                                                            'partner_id': m_proveedor,
-    #                                                                            'currency_id': 16,
-    #                                                                            'active': True}])
-    #else:
-    #    print("Si existe registro Secuencia:", m_secuencia)
+    if registros == 0:
+        # HOJA
+        m_defacode = 'ME-001'
+        m_name = '[ME-001] HOJAS'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':10,
+                                                                                'product_qty': float(row.HOJA_KG),
+                                                                                'product_uom_qty': float(row.HOJA_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # CHULQUIN
+        m_defacode = 'ME-002'
+        m_name = '[ME-002] CHULQUIN'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':20,
+                                                                                'product_qty': float(row.CHULKIN_KG),
+                                                                                'product_uom_qty': float(row.CHULKIN_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # COGOLLOS
+        m_defacode = 'ME-003'
+        m_name = '[ME-003] COGOLLOS'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':30,
+                                                                                'product_qty': float(row.COGOLLO_KG),
+                                                                                'product_uom_qty': float(row.COGOLLO_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # CAÑA SECA
+        m_defacode = 'ME-004'
+        m_name = '[ME-004] CAÑA SECA'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)        
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':40,
+                                                                                'product_qty': float(row.CAÑA_SECA_KG),
+                                                                                'product_uom_qty': float(row.CAÑA_SECA_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # YAGUAS
+        m_defacode = 'ME-005'
+        m_name = '[ME-005] YAGUAS'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)        
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':50,
+                                                                                'product_qty': float(row.YAGUAS_KG),
+                                                                                'product_uom_qty': float(row.YAGUAS_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # TIERRAS
+        m_defacode = 'MM-001'
+        m_name = '[MM-001] TIERRAS'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)        
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':60,
+                                                                                'product_qty': float(row.TIERRA_KG),
+                                                                                'product_uom_qty': float(row.TIERRA_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # CEPAS
+        m_defacode = 'MM-002'
+        m_name = '[MM-002] CEPAS'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)        
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':70,
+                                                                                'product_qty': float(row.CEPAS_KG),
+                                                                                'product_uom_qty': float(row.CEPAS_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # PIEDRAS
+        m_defacode = 'MM-003'
+        m_name = '[MM-003] PIEDRAS'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)        
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':80,
+                                                                                'product_qty': float(row.PIEDRAS_KG),
+                                                                                'product_uom_qty': float(row.PIEDRAS_KG),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+        # CANA LIMPIA                                                                    
+        m_defacode = 'MP-002'
+        m_name = '[MP-002] MUESTRA CAÑA LIMPIA'
+        m_product_id = mi_productO(url, db, uid, password, m_defacode, m_name)        
+        ident = models.execute_kw(db, uid, password, 'sample.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'guia': m_guia,
+                                                                                'state': 'sample',
+                                                                                'name': m_name,
+                                                                                'sequence':90,
+                                                                                'product_qty': float(row.CANA_LIMPIA),
+                                                                                'product_uom_qty': float(row.CANA_LIMPIA),
+                                                                                'product_uom': 1,
+                                                                                'product_id': m_product_id,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'active': True}])
+
+    else:
+        print("Si existe registro Secuencia:", m_guia)
 
 
 print("########## FIN DE RUTINA DE SINCRONIZACION DE GUIAS ############")
