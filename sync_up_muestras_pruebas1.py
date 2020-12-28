@@ -24,7 +24,6 @@ def mi_productO(url, db, uid, password, l_defacode, l_name):
                                                                                        'active': 1,}])
          return ident
     else: return ids[0]
-
 ####-PROVEEDOR-######################################################
 def mi_proveedor(url, db, uid, password, l_prov):
     import xmlrpc.client
@@ -70,8 +69,6 @@ def mi_equipo(url, db, uid, password, eqid):
 ###-TIPO EQUIPO-#####################################################
 def mi_tipo_equipo(url, db, uid, password, tieq):
     import xmlrpc.client
-     # Calliing methods
-        
     models_tieq = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
     models_tieq.execute_kw(db, uid, password,
                      'fincas_pma.tipo_equipo', 'check_access_rights',
@@ -81,15 +78,12 @@ def mi_tipo_equipo(url, db, uid, password, tieq):
     registros = models_tieq.execute_kw(db, uid, password, 'fincas_pma.tipo_equipo', 'search_count', filtro)
     ids =       models_tieq.execute_kw(db, uid, password, 'fincas_pma.tipo_equipo', 'search',       filtro, {'limit': 1})
     if registros == 0:
-         #print("Registro : ",  filtro , "No existe!!!")
-         #print("IDS: ", ids)
          ident = models_tieq.execute_kw(db, uid, password, 'fincas_pma.tipo_equipo', 'create', [{ 'name': tieq,
                                                                                         'active': 1,}])
          return ident
-        #print("id_Odoo: ", ident)
     else: return ids[0]
 ### Up ##############################################################
-def mi_up(url, db, uid, password, l_up):
+def mi_up(url, db, uid, password, l_up, l_prov):
     import xmlrpc.client
      # Calliing methods
         
@@ -104,14 +98,59 @@ def mi_up(url, db, uid, password, l_up):
     if registros == 0:
          #print("Registro : ",  filtro , "No existe!!!")
          #print("IDS: ", ids)
-         ident = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'create', [{ 'name': l_up,
+         ident = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'create', [{ 'name': str(l_up),
                                                                                         'active': 1,
-                                                                                        'code_up': l_up,
-                                                                                        'description': l_up}])
+                                                                                        'code_up': str(l_up),
+                                                                                        'description': str(l_up),
+                                                                                        'partner_id': l_prov}])
          return ident
         #print("id_Odoo: ", ident)
     else: return ids[0]
-#####################################################################
+### FRENTE ##########################################################
+def mi_frente(url, db, uid, password, l_frente):
+    import xmlrpc.client
+    models_fren = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_fren.execute_kw(db, uid, password,
+                     'fincas_pma.frentes', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['code_frente', '=', l_frente], ['active','=',1]]]  #lista de python
+    registros = models_fren.execute_kw(db, uid, password, 'fincas_pma.frentes', 'search_count', filtro)
+    ids =       models_fren.execute_kw(db, uid, password, 'fincas_pma.frentes', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         ident = models_fren.execute_kw(db, uid, password, 'fincas_pma.frentes', 'create', [{ 'name': l_frente,
+                                                                                        'active': 1,
+                                                                                        'code_frente': l_frente,
+                                                                                        'company_id': 1,
+                                                                                        'description': 'FRENTE DE PRUEBAS MAT.EXT.-DATOS FICTICIOS',
+                                                                                        }])
+         return ident
+    else: return ids[0]
+### proyecto ###################################################
+def mi_proyecto(url, db, uid, password, l_up, l_lot, l_proveedor):
+    import xmlrpc.client
+    models_proy = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_proy.execute_kw(db, uid, password,
+                     'project.project', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    lc_uplote = str(l_up) + '-' + str(l_lot)
+    lm_up = mi_up(url, db, uid, password, l_up, l_proveedor)
+    filtro = [[['uplote', '=', lc_uplote], ['active','=',1]]]  #lista de python
+    registros = models_proy.execute_kw(db, uid, password, 'project.project', 'search_count', filtro)
+    ids =       models_proy.execute_kw(db, uid, password, 'project.project', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         ident = models_proy.execute_kw(db, uid, password, 'project.project', 'create', [{ 'name': l_proveedor+' '+str(l_up)+'-'+str(l_lot),
+                                                                                        'active': 1,
+                                                                                        'uplote': str(l_up) + '-' + str(l_lot),
+                                                                                        'up': lm_up,
+                                                                                        'lote': str(l_lot),
+                                                                                        'company_id': 1,
+                                                                                        'description': l_proveedor+' '+str(l_up)+'-'+str(l_lot),
+                                                                                        }])
+         return ident
+    else: return ids[0]
+########################################################################################################################################
 
 #url = "http://odoradita.com:8069"
 #db = "test3_CADASA_main"
@@ -168,12 +207,16 @@ for row in rows:
     m_fechahc = row.FECHA_MUESTRA.isoformat(sep=' ',timespec='seconds')
     # Tipo de Equipos
     m_equipo = mi_equipo(url, db, uid, password, '845223')
-    # UP
-    m_up = mi_up(url, db, uid, password, row.UP)
     # Proveedor
     m_proveedor = mi_proveedor(url, db, uid, password, row.PROVEEDOR)
+    # UP
+    m_up = mi_up(url, db, uid, password, row.UP, m_proveedor)
     # Bruto, Tara y Neto
     m_guia = str(int(row.GUIA))
+    # Frente
+    m_frente = mi_frente(url, db, uid, password, '10')
+    # Proyecto = UPLote
+    m_proyecto = mi_proyecto(url, db, uid, password, row.UP, row.LOT, row.PROVEEDOR)
     #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
     # Purchase Order [Encabezado]
     m_ident = 0
@@ -192,7 +235,7 @@ for row in rows:
                                                                                 'zafra': 1,
                                                                                 'date_order': m_fechahc,
                                                                                 'equipo_id': m_equipo,
-                                                                                'frente': 1,
+                                                                                'frente': m_frente,
                                                                                 'up': m_up,
                                                                                 'lote': row.LOT,
                                                                                 'origin': m_guia,
@@ -200,6 +243,7 @@ for row in rows:
                                                                                 'state': 'sample',
                                                                                 'diazafra':'1',
                                                                                 'empleado_id':1,
+                                                                                'projects_id': m_proyecto,
                                                                                 'active': True}])
         m_ident = ident
     else:
