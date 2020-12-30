@@ -218,7 +218,7 @@ for row in rows:
     # Proyecto = UPLote
     m_proyecto = mi_proyecto(url, db, uid, password, row.UP, row.LOT, row.PROVEEDOR)
     # Tipo de Caña
-    if row.TIPO_CANA == 'Caña Picada Verde':
+    if row.TIPO_CAÑA == 'Caña Picada Verde':
         m_tipo_cana = 'V'
     else:
         m_tipo_cana = ''
@@ -249,7 +249,7 @@ for row in rows:
                                                                                 'diazafra':'1',
                                                                                 'empleado_id':1,
                                                                                 'projects_id': m_proyecto,
-                                                                                'tipo_cane': m_tipo_cana
+                                                                                'tipo_cane': m_tipo_cana,
                                                                                 'active': True}])
         m_ident = ident
     else:
