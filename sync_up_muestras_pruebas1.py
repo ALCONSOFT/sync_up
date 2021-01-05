@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import pyodbc
 import sys
 import xmlrpc.client
@@ -154,8 +155,8 @@ def mi_proyecto(url, db, uid, password, l_up, l_lot, l_proveedor):
 
 #url = "http://odoradita.com:8069"
 #db = "test3_CADASA_main"
-url = "http://localhost:10014"
-db = "t14_PU1"
+url = "http://localhost:8069"
+db = "t14_CADASA_03"
 username = 'soporte@alconsoft.net'
 password = "2010Sistech"
 max_registros = 501
@@ -192,10 +193,10 @@ cursor1 = conexion1.cursor()
 #FROM CAMPO.dbo.GUI_GUIA_CANA;
 #
 
-con1a = "SELECT TOP (1000) [GUIA],[UP],[PROVEEDOR],[LOT],[TIPO_CAÑA],[FECHA_MUESTRA],[CANA_LIMPIA]"
+con1a = "SELECT TOP (1000) [GUIA],[UP],[PROVEEDOR],[LOT],[TIPO_CANA],[FECHA_MUESTRA],[CANA_LIMPIA]"
 con1b = ",[HOJAS_PORC],[CHULQUIN_PORC],[COGOLLO_PORC],[CANA_SECA_PORC],[YAGUAS_PORC]"
 con1c = ",[TIERRAS_PORC],[CEPAS_PORC],[PIEDRAS_PORC],[PESO_IMPU],[CORTE_PORC],[ALCE_PORC]"
-con1d = ",[IMPU_PORC],[PESO_MUESTRA],[HOJA_KG],[CHULKIN_KG],[COGOLLO_KG],[CAÑA_SECA_KG]"
+con1d = ",[IMPU_PORC],[PESO_MUESTRA],[HOJA_KG],[CHULKIN_KG],[COGOLLO_KG],[CANA_SECA_KG]"
 con1e = ",[YAGUAS_KG],[TIERRA_KG],[CEPAS_KG],[PIEDRAS_KG]"
 con2 =  " FROM [CAMPO].[dbo].[Agosto_Datos] "
 consulta = con1a + con1b + con1c + con1d + con1e + con2
@@ -203,7 +204,7 @@ print("Consulta MS-SQL: ", consulta)
 cursor1.execute(consulta)
 rows = cursor1.fetchall()
 for row in rows:
-    print(row.GUIA, row.UP, row.LOT, row.PROVEEDOR, row.TIPO_CAÑA, row.FECHA_MUESTRA, row.CANA_LIMPIA)
+    print(row.GUIA, row.UP, row.LOT, row.PROVEEDOR, row.FECHA_MUESTRA, row.CANA_LIMPIA)
     m_fechahc = row.FECHA_MUESTRA.isoformat(sep=' ',timespec='seconds')
     # Tipo de Equipos
     m_equipo = mi_equipo(url, db, uid, password, '845223')
@@ -334,8 +335,8 @@ for row in rows:
                                                                                 'state': 'sample',
                                                                                 'name': m_name,
                                                                                 'sequence':40,
-                                                                                'product_qty': float(row.CAÑA_SECA_KG),
-                                                                                'product_uom_qty': float(row.CAÑA_SECA_KG),
+                                                                                'product_qty': float(row.CANA_SECA_KG),
+                                                                                'product_uom_qty': float(row.CANA_SECA_KG),
                                                                                 'product_uom': 1,
                                                                                 'product_id': m_product_id,
                                                                                 'price_unit': 0.00,
