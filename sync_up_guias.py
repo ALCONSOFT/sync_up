@@ -6,7 +6,133 @@ from datetime import datetime
 from openpyxl import Workbook
 import xlsxwriter
 from datetime import datetime
+import time
 
+########################################################################
+def mi_proyecto(url, db, uid, password, l_up, l_lot, l_proveedor):
+    import xmlrpc.client
+    models_proy = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_proy.execute_kw(db, uid, password,
+                     'project.project', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    lc_uplote = str(int(l_up)) + '-' + str(int(l_lot))
+    lm_up = mi_up(url, db, uid, password, l_up, l_proveedor)
+    filtro = [[['uplote', '=', lc_uplote], ['active','=',1]]]  #lista de python
+    registros = models_proy.execute_kw(db, uid, password, 'project.project', 'search_count', filtro)
+    ids =       models_proy.execute_kw(db, uid, password, 'project.project', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         ident = models_proy.execute_kw(db, uid, password, 'project.project', 'create', [{ 'name': l_proveedor+' '+str(int(l_up))+'-'+str(int(l_lot)),
+                                                                                        'active': 1,
+                                                                                        'uplote': str(int(l_up)) + '-' + str(int(l_lot)),
+                                                                                        'up': lm_up,
+                                                                                        'lote': str(int(l_lot)),
+                                                                                        'company_id': 1,
+                                                                                        'description': l_proveedor+' '+str(int(l_up))+'-'+str(int(l_lot)),
+                                                                                        }])
+         return ident
+    else: return ids[0]
+###################################
+def mi_turno_hora(lc_hora):
+    if lc_hora == '06':
+        return 'Noct.'
+    elif lc_hora == '07':
+        return 'Diur.'
+    elif lc_hora == '08':
+        return 'Diur.'
+    elif lc_hora == '09':
+        return 'Diur.'
+    elif lc_hora == '10':
+        return 'Diur.'
+    elif lc_hora == '11':
+        return 'Diur.'
+    elif lc_hora == '12':
+        return 'Diur.'
+    elif lc_hora == '13':
+        return 'Diur.'
+    elif lc_hora == '14':
+        return 'Diur.'
+    elif lc_hora == '15':
+        return 'Diur.'
+    elif lc_hora == '16':
+        return 'Diur.'
+    elif lc_hora == '17':
+        return 'Diur.'
+    elif lc_hora == '18':
+        return 'Diur.'
+    elif lc_hora == '19':
+        return 'Noct.'
+    elif lc_hora == '20':
+        return 'Noct.'
+    elif lc_hora == '21':
+        return 'Noct.'
+    elif lc_hora == '22':
+        return 'Noct.'
+    elif lc_hora == '23':
+        return 'Noct.'
+    elif lc_hora == '00':
+        return 'Noct.'
+    elif lc_hora == '01':
+        return 'Noct.'
+    elif lc_hora == '02':
+        return 'Noct.'
+    elif lc_hora == '03':
+        return 'Noct.'
+    elif lc_hora == '04':
+        return 'Noct.'
+    elif lc_hora == '05':
+        return 'Noct.'
+###################################
+def mi_lote_hora(lc_hora):
+    if lc_hora == '06':
+        return '01:06-07'
+    elif lc_hora == '07':
+        return '02:07-08'
+    elif lc_hora == '08':
+        return '03:08-09'
+    elif lc_hora == '09':
+        return '04:09-10'
+    elif lc_hora == '10':
+        return '05:10-11'
+    elif lc_hora == '11':
+        return '06:11-12'
+    elif lc_hora == '12':
+        return '07:12-13'
+    elif lc_hora == '13':
+        return '08:13-14'
+    elif lc_hora == '14':
+        return '09:14-15'
+    elif lc_hora == '15':
+        return '10:15-16'
+    elif lc_hora == '16':
+        return '11:16-17'
+    elif lc_hora == '17':
+        return '12:17-18'
+    elif lc_hora == '18':
+        return '13:18-19'
+    elif lc_hora == '19':
+        return '14:19-20'
+    elif lc_hora == '20':
+        return '15:20-21'
+    elif lc_hora == '21':
+        return '16:21-22'
+    elif lc_hora == '22':
+        return '17:22-23'
+    elif lc_hora == '23':
+        return '18:23-00'
+    elif lc_hora == '00':
+        return '19:00-01'
+    elif lc_hora == '01':
+        return '20:01-02'
+    elif lc_hora == '02':
+        return '21:02-03'
+    elif lc_hora == '03':
+        return '22:03-04'
+    elif lc_hora == '04':
+        return '23:04-05'
+    elif lc_hora == '05':
+        return '24:05-06'
+###########################################################################
 def mi_proveedor(url, db, uid, password, l_prov):
     import xmlrpc.client
     # Calliing methods
@@ -48,7 +174,7 @@ def mi_tipo_equipo(url, db, uid, password, tieq):
         #print("id_Odoo: ", ident)
     else: return ids[0]
 ### Up ##############################################################
-def mi_up(url, db, uid, password, l_up):
+def mi_up(url, db, uid, password, l_up, l_prov):
     import xmlrpc.client
      # Calliing methods
         
@@ -57,35 +183,49 @@ def mi_up(url, db, uid, password, l_up):
                      'fincas_pma.up', 'check_access_rights',
                      ['read'], {'raise_exception': False})
     
-    filtro = [[['code_up', '=', l_up], ['active','=',1]]]  #lista de python
+    filtro = [[['code_up', '=', str(int(l_up))], ['active','=',1]]]  #lista de python
     registros = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'search_count', filtro)
     ids =       models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'search',       filtro, {'limit': 1})
     if registros == 0:
          #print("Registro : ",  filtro , "No existe!!!")
          #print("IDS: ", ids)
-         ident = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'create', [{ 'name': l_up,
+         ident = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'create', [{ 'name': str(int(l_up)),
                                                                                         'active': 1,
-                                                                                        'code_up': l_up,
-                                                                                        'description': l_up}])
+                                                                                        'code_up': str(int(l_up)),
+                                                                                        'description': str(int(l_up)),
+                                                                                        'partner_id': l_prov}])
          return ident
         #print("id_Odoo: ", ident)
+    else: return ids[0]
+### Zafra #######################################################
+def mi_zafra(url, db, uid, password, lc_zafra):
+    import xmlrpc.client
+    models_zafra = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_zafra.execute_kw(db, uid, password,
+                     'fincas_pma.zafras', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['code_zafra', '=', lc_zafra], ['active','=',1]]]  #lista de python
+    registros = models_zafra.execute_kw(db, uid, password, 'fincas_pma.zafras', 'search_count', filtro)
+    ids =       models_zafra.execute_kw(db, uid, password, 'fincas_pma.zafras', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+         ident = models_zafra.execute_kw(db, uid, password, 'fincas_pma.zafras', 'create', [{ 'name': lc_zafra,
+                                                                                        'active': 1,
+                                                                                        'code_zafra': lc_zafra,
+                                                                                        'description': lc_zafra}])
+         return ident
     else: return ids[0]
 #################################################################
 # PROGRAMA PRINCIPAL - ODOO 14
 
 #url = "http://odoradita.com:8069"
-#db = "test3_CADASA_main"
-url = "http://localhost:10014"
-db = "t14_PU1"
+#db = "test14_CADASA_Z_2021"
+url = "http://localhost:11014"
+db = "t14_PRUEBAS_B_02"
 username = 'soporte@alconsoft.net'
 password = "2010Sistech"
 max_registros = 501
 ###################################
-import winsound
-freq = 2500 # Set frequency To 2500 Hertz
-dur = 1000 # Set duration To 1000 ms == 1 second
-print("Beep:", winsound.Beep(freq, dur))
-#Para DOS/Windows
 os.system ("cls")
 print("INICIANDO RUTINA DE SINCRONIZACION DE GUIAS")
 common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
@@ -112,16 +252,22 @@ cursor1 = conexion1.cursor()
 #SELECT Secuencia, Ano, FechaHoraCaptura, Placa, Tipo_Equipo, Tipo_Vehiculo, Contrato, Frente, Up, Proveedor, Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema
 #FROM CAMPO.dbo.GUI_GUIA_CANA;
 #
-consulta1a = "SELECT Secuencia, Ano, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
-consulta1b =" Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs "
-consulta1 = consulta1a + consulta1b
+consulta1a = "SELECT Secuencia, Ano, FechaHoraCaptura, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
+consulta1b = " Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs, "
+consulta1c = " Tipo_Alce, Alce1, Alce2, Epl_Alce1, Epl_Alce2, Montacargas, Epl_Montacarga, Tractor1, Tractor2, Epl_Tractor1, Epl_Tractor2, Nombre_Transportista, "
+consulta1d = " Num_Epl_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
+consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, Cerrado_Total, "
+consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
+consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
 consulta2 = "FROM CAMPO.dbo.GUI_GUIA_CANA"
-consulta3 = " WHERE Dia_Zafra = 3 "
+consulta3 = " WHERE Dia_Zafra = 0 AND Ano = 2020 "
+#consulta3 = " WHERE Ano = 2020 "
 consulta4 = "ORDER BY Secuencia"
 consulta = consulta1 + consulta2 + consulta3 +consulta4
 print("Consulta MS-SQL: ", consulta)
 cursor1.execute(consulta)
 rows = cursor1.fetchall()
+m_zafra = mi_zafra(url, db, uid, password, '2019-2020')
 
 for row in rows:
     print(row.Secuencia, row.Ano, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
@@ -129,16 +275,45 @@ for row in rows:
     # print("Tipo de Sec." , type(row.Secuencia))
     m_secuencia = int(row.Secuencia)
     #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-    m_fechahc = row.FechaHC
+    m_fechahc = row.FechaHoraCaptura.isoformat(sep=' ',timespec='seconds')
     # Tipo de Equipos
     m_tipo_equipo = mi_tipo_equipo(url, db, uid, password, row.Tipo_Equipo)
     # UP
-    m_up = mi_up(url, db, uid, password, row.Up)
+    m_up = mi_up(url, db, uid, password, row.Up, row.Proveedor)
     # Proveedor
     m_proveedor = mi_proveedor(url, db, uid, password, row.Proveedor)
+    # Proyecto
+    m_proyecto = mi_proyecto(url, db, uid, password, row.Up, row.Subdiv, row.Proveedor)
     # Bruto, Tara y Neto
     #print("Tipo Bruto: ", type(row.Bruto))
-    #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    # Lote Hora
+    m_hora = str(row.FechaHoraCaptura.hour).zfill(2)
+    m_lote_hora = mi_lote_hora(m_hora)
+    if not row.Hora_Salida:
+        m_hora_Salida = "00:00"
+    if not row.IncentivoTL:
+        m_incentivotl = 0
+    m_hora_entrada = row.Hora_Entrada[0:8]
+    # ANALISIS DE CAJAS Y PESO
+    if row.Tipo_Equipo == 'CAMION':
+        list_cajas = ['CAJA1']
+        m_peso_caja1 = float(row.Neto_Lbs)
+        m_peso_caja2 = 0.00
+    else:
+        if row.Tipo_Equipo == 'TRACTOR' or row.Tipo_Equipo == 'MULA':
+            list_cajas = ['CAJA1','CAJA2']
+            if row.Caja2 == "0":
+                m_peso_caja1 = float(row.Neto_Ton)
+                m_peso_caja2 = 0.00
+            else:
+                m_peso_caja1 = float(row.Neto_Ton)/2
+                m_peso_caja2 = float(row.Neto_Ton)/2
+        else:
+            list_cajas = []
+            m_peso_caja1 = 0.00
+            m_peso_caja2 = 0.00
+    m_cant_cajas = len(list_cajas)
+
     # Purchase Order [Encabezado]
     m_ident = 0
     filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
@@ -147,14 +322,14 @@ for row in rows:
     if registros != 0:
         m_ident = ids[0]
     if registros == 0:
-        print("Registro : ",  filtro , "No existe!!!")
+        #print("Registro : ",  filtro , "No existe!!!")
         #print("IDS: ", ids)
         ident = models.execute_kw(db, uid, password, 'purchase.order', 'create', [{ 'company_id': 1,
                                                                                 'currency_id': 16,
                                                                                 'partner_id': m_proveedor,
                                                                                 'secuencia_guia': m_secuencia,
                                                                                 'ano': row.Ano,
-                                                                                'zafra': 1,
+                                                                                'zafra': m_zafra,
                                                                                 'fechahc': m_fechahc,
                                                                                 'placa': row.Placa,
                                                                                 'tipo_equipo': m_tipo_equipo,
@@ -171,16 +346,67 @@ for row in rows:
                                                                                 'bruto': float(row.Bruto),
                                                                                 'tara': float(row.Tara),
                                                                                 'neto': float(row.Neto_Lbs),
+                                                                                'date_order': m_fechahc,
+                                                                                'neto_ton': float(row.Neto_Ton)/0.907185,
+                                                                                'neto_tonl': float(row.Neto_Ton),
+                                                                                'ton1': float(row.Ton1)/0.907185,
+                                                                                'ton2': float(row.Ton2)/0.907185,
+                                                                                'dia_zafra': str(row.Dia_Zafra).zfill(3),
+                                                                                'lote_hora': m_lote_hora,
+                                                                                'tipo_alce': row.Tipo_Alce,
+                                                                                'alce1': row.Alce1,
+                                                                                'alce2': row.Alce2,
+                                                                                'epl_alce1': row.Epl_Alce1,
+                                                                                'epl_alce2': row.Epl_Alce2,
+                                                                                'montacargas': row.Montacargas,
+                                                                                'epl_montacarga': row.Epl_Montacarga,
+                                                                                'tractor1': row.Tractor1,
+                                                                                'tractor2': row.Tractor2,
+                                                                                'epl_tractor1': row.Epl_Tractor1,
+                                                                                'epl_tractor2': row.Epl_Tractor2,
+                                                                                'nombre_tansportista': row.Nombre_Transportista,
+                                                                                'cha1': row.Cha1,
+                                                                                'tcha1': row.TCha1,
+                                                                                'cha2': row.Cha2,
+                                                                                'tcha2': row.TCha2,
+                                                                                'mula': row.Mula,
+                                                                                'tmula': row.TMula,
+                                                                                'chamula': row.ChaMula,
+                                                                                'tchamula': row.TChaMula,
+                                                                                'caja1': row.Caja1,
+                                                                                'tcaja1': row.TCaja1,
+                                                                                'caja2': row.Caja2,
+                                                                                'tcaja2': row.TCaja2,
+                                                                                'promedio': float(row.Promedio),
+                                                                                'detalle': row.Detalle,
+                                                                                'cerrado': row.Cerrado,
+                                                                                'eliminado': row.Eliminado,
+                                                                                'usuario_guia': row.Usuario_Guia,
+                                                                                'procesado_contabilidad': row.Procesado_Contabilidad,
+                                                                                'hora_entrada': m_hora_entrada,
+                                                                                'hora_salida': m_hora_Salida,
+                                                                                'incetivo_tl': m_incentivotl,
+                                                                                'incentivo_ti': row.IncentivoTI,
+                                                                                'cerrado_total': row.Cerrado_Total,                                                                                
+                                                                                'fecha_tiquete': row.Fecha_Tiquete,
+                                                                                'hora_tiquete': row.Hora_Tiquete,
+                                                                                'usuario_tiquete': row.Usuario_Tiquete,
+                                                                                'origen_tiquete': row.Origen_Tiquete,
+                                                                                'cane': row.Cana,
+                                                                                'cant_cajas': m_cant_cajas,
+                                                                                'turno': mi_turno_hora(m_hora),
+                                                                                'project_id': m_proyecto,
                                                                                 'active': True}])
         m_ident = ident
     else:
         print("Si existe registro Secuencia:", m_secuencia)
     # Purchase Order line [Detalle]
+
     filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
     registros = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_count', filtro)
     ids =       models.execute_kw(db, uid, password, 'purchase.order.line', 'search',       filtro, {'limit': 1})
     if registros == 0:
-        print("Registro : ",  filtro , "No existe!!!")
+        #print("Registro : ",  filtro , "No existe!!!")
         #print("IDS: ", ids)
         ident = models.execute_kw(db, uid, password, 'purchase.order.line', 'create', [{ 'company_id': 1,
                                                                                 'currency_id': 16,
@@ -192,10 +418,11 @@ for row in rows:
                                                                                 'neto': float(row.Neto_Lbs),
                                                                                 'name': '[MP-001] CAÑA DE AZUCAR',
                                                                                 'sequence':10,
-                                                                                'product_qty': float(row.Neto_Lbs)*0.453592,
-                                                                                'product_uom_qty': float(row.Neto_Lbs)*0.453592,
-                                                                                'product_uom': 1,
-                                                                                'product_id': 1,
+                                                                                'product_qty': m_peso_caja1,
+                                                                                'product_uom_qty': m_peso_caja1,
+                                                                                'product_uom': 13,
+                                                                                'qty_received':m_peso_caja1,
+                                                                                'product_id': 2,
                                                                                 'price_unit': 0.00,
                                                                                 'price_subtotal': 0.00,
                                                                                 'price_total': 0.00,
@@ -211,7 +438,39 @@ for row in rows:
                                                                                 'active': True}])
     else:
         print("Si existe registro Secuencia:", m_secuencia)
-
+# Segunda Caja: Solo tipo_equipo = 'TRACTOR' Y 'MULA' Y CAJA2 != 0
+    if m_peso_caja2 != 0.00 and registros == 0:
+       #print("Registro : ",  filtro , "No existe!!!")
+        #print("IDS: ", ids)
+        ident = models.execute_kw(db, uid, password, 'purchase.order.line', 'create', [{ 'company_id': 1,
+                                                                                'currency_id': 16,
+                                                                                'partner_id': m_proveedor,
+                                                                                'secuencia_guia': m_secuencia,
+                                                                                'state': 'purchase',
+                                                                                'bruto': float(row.Bruto),
+                                                                                'tara': float(row.Tara),
+                                                                                'neto': float(row.Neto_Lbs),
+                                                                                'name': '[MP-001] CAÑA DE AZUCAR',
+                                                                                'sequence':20,
+                                                                                'product_qty': m_peso_caja2,
+                                                                                'product_uom_qty': m_peso_caja2,
+                                                                                'product_uom': 13,
+                                                                                'qty_received': m_peso_caja1,
+                                                                                'product_id': 2,
+                                                                                'price_unit': 0.00,
+                                                                                'price_subtotal': 0.00,
+                                                                                'price_total': 0.00,
+                                                                                'price_tax': 0.00,
+                                                                                'order_id': m_ident,
+                                                                                'company_id': 1,
+                                                                                'state': 'purchase',
+                                                                                'qty_received_method': 'stock_moves',
+                                                                                'qty_received': 0.00,
+                                                                                'qty_received_manual': 0.00,
+                                                                                'partner_id': m_proveedor,
+                                                                                'currency_id': 16,
+                                                                                'active': True}])
+    
 
 #'zafra': row.Ano,
 print("########## FIN DE RUTINA DE SINCRONIZACION DE GUIAS ############")
