@@ -18,9 +18,10 @@ def mi_proyecto(url, db, uid, password, l_up, l_lot, l_proveedor):
     
     lc_uplote = str(int(l_up)) + '-' + str(int(l_lot))
     lm_up = mi_up(url, db, uid, password, l_up, l_proveedor)
+    lm_proveedor = mi_proveedor(url, db, uid, password, l_proveedor)
     filtro = [[['uplote', '=', lc_uplote], ['active','=',1]]]  #lista de python
     registros = models_proy.execute_kw(db, uid, password, 'project.project', 'search_count', filtro)
-    ids =       models_proy.execute_kw(db, uid, password, 'project.project', 'search',       filtro, {'limit': 1})
+    idsr =      models_proy.execute_kw(db, uid, password, 'project.project', 'search_read',  filtro, {'fields':['name','uplote','partner_id'], 'limit': 1} )
     if registros == 0:
          ident = models_proy.execute_kw(db, uid, password, 'project.project', 'create', [{ 'name': l_proveedor+' '+str(int(l_up))+'-'+str(int(l_lot)),
                                                                                         'active': 1,
@@ -29,9 +30,16 @@ def mi_proyecto(url, db, uid, password, l_up, l_lot, l_proveedor):
                                                                                         'lote': str(int(l_lot)),
                                                                                         'company_id': 1,
                                                                                         'description': l_proveedor+' '+str(int(l_up))+'-'+str(int(l_lot)),
+                                                                                        'partner_id': lm_proveedor,
                                                                                         }])
          return ident
-    else: return ids[0]
+    else:
+        # Si el proyecto (uplote) existé; entonces hacer:
+        # Verificar el Proveedor en la tabla de proyectos si existe
+        if not idsr[0]['partner_id']:
+            # escribirlo en la tabla de proyectos para relacionarlo al mismo
+            models_proy.execute_kw(db, uid, password, 'project.project', 'write', [idsr[0]['id'] , {'partner_id': lm_proveedor}])
+        return idsr[0]['id']
 ###################################
 def mi_turno_hora(lc_hora):
     if lc_hora == '06':
@@ -132,7 +140,7 @@ def mi_lote_hora(lc_hora):
         return '23:04-05'
     elif lc_hora == '05':
         return '24:05-06'
-###########################################################################
+#################################################################
 def mi_proveedor(url, db, uid, password, l_prov):
     import xmlrpc.client
     # Calliing methods
@@ -152,7 +160,7 @@ def mi_proveedor(url, db, uid, password, l_prov):
          return ident
         #print("id_Odoo: ", ident)
     else: return ids[0]
-### Up ##############################################################
+### Up ##########################################################
 def mi_tipo_equipo(url, db, uid, password, tieq):
     import xmlrpc.client
      # Calliing methods
@@ -173,11 +181,11 @@ def mi_tipo_equipo(url, db, uid, password, tieq):
          return ident
         #print("id_Odoo: ", ident)
     else: return ids[0]
-### Up ##############################################################
+### Up ##########################################################
 def mi_up(url, db, uid, password, l_up, l_prov):
     import xmlrpc.client
      # Calliing methods
-        
+    lm_proveedor = mi_proveedor(url, db, uid, password, l_prov)    
     models_up = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
     models_up.execute_kw(db, uid, password,
                      'fincas_pma.up', 'check_access_rights',
@@ -185,39 +193,42 @@ def mi_up(url, db, uid, password, l_up, l_prov):
     
     filtro = [[['code_up', '=', str(int(l_up))], ['active','=',1]]]  #lista de python
     registros = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'search_count', filtro)
-    ids =       models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'search',       filtro, {'limit': 1})
+    idsr =      models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'search_read',  filtro, {'fields':['name','code_up','partner_id'], 'limit': 1} )
     if registros == 0:
-         #print("Registro : ",  filtro , "No existe!!!")
-         #print("IDS: ", ids)
          ident = models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'create', [{ 'name': str(int(l_up)),
                                                                                         'active': 1,
                                                                                         'code_up': str(int(l_up)),
-                                                                                        'description': str(int(l_up)),
-                                                                                        'partner_id': l_prov}])
+                                                                                        'description': l_prov + '-' +str(int(l_up)),
+                                                                                        'partner_id': lm_proveedor}])
          return ident
-        #print("id_Odoo: ", ident)
-    else: return ids[0]
+    else:
+        # Si el UP existé; entonces hacer:
+        # Verificar el Proveedor en la tabla de UP si existe
+        if not idsr[0]['partner_id']:
+            # escribirlo en la tabla de proyectos para relacionarlo al mismo
+            models_up.execute_kw(db, uid, password, 'fincas_pma.up', 'write', [idsr[0]['id'] , {'partner_id': lm_proveedor}])
+        return idsr[0]['id']
 ### Zafra #######################################################
-def mi_zafra(url, db, uid, password, lc_zafra):
+def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
     import xmlrpc.client
     models_zafra = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
     models_zafra.execute_kw(db, uid, password,
                      'fincas_pma.zafras', 'check_access_rights',
                      ['read'], {'raise_exception': False})
     
-    filtro = [[['code_zafra', '=', lc_zafra], ['active','=',1]]]  #lista de python
+    filtro = [[['name', '=', lc_name], ['code_zafra', '=', lc_czafra], ['active','=',1]]]  #lista de python
     registros = models_zafra.execute_kw(db, uid, password, 'fincas_pma.zafras', 'search_count', filtro)
     ids =       models_zafra.execute_kw(db, uid, password, 'fincas_pma.zafras', 'search',       filtro, {'limit': 1})
     if registros == 0:
-         ident = models_zafra.execute_kw(db, uid, password, 'fincas_pma.zafras', 'create', [{ 'name': lc_zafra,
+         ident = models_zafra.execute_kw(db, uid, password, 'fincas_pma.zafras', 'create', [{ 'name': lc_name,
                                                                                         'active': 1,
                                                                                         'code_zafra': lc_zafra,
                                                                                         'description': lc_zafra}])
          return ident
     else: return ids[0]
 #################################################################
-# PROGRAMA PRINCIPAL - ODOO 14
-
+# PROGRAMA PRINCIPAL - ODOO 14                                  #
+#################################################################
 #url = "http://odoradita.com:8069"
 #db = "test14_CADASA_Z_2021"
 url = "http://localhost:11014"
@@ -260,14 +271,14 @@ consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, P
 consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
 consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
 consulta2 = "FROM CAMPO.dbo.GUI_GUIA_CANA"
-consulta3 = " WHERE Dia_Zafra = 0 AND Ano = 2020 "
+consulta3 = " WHERE Dia_Zafra >= 23 AND Ano = 2020 "
 #consulta3 = " WHERE Ano = 2020 "
 consulta4 = "ORDER BY Secuencia"
 consulta = consulta1 + consulta2 + consulta3 +consulta4
 print("Consulta MS-SQL: ", consulta)
 cursor1.execute(consulta)
 rows = cursor1.fetchall()
-m_zafra = mi_zafra(url, db, uid, password, '2019-2020')
+m_zafra = mi_zafra(url, db, uid, password, '2020','2019-2020')
 
 for row in rows:
     print(row.Secuencia, row.Ano, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
@@ -291,6 +302,8 @@ for row in rows:
     m_lote_hora = mi_lote_hora(m_hora)
     if not row.Hora_Salida:
         m_hora_Salida = "00:00"
+    else:
+        m_hora_Salida = row.Hora_Salida
     if not row.IncentivoTL:
         m_incentivotl = 0
     m_hora_entrada = row.Hora_Entrada[0:8]
@@ -396,6 +409,7 @@ for row in rows:
                                                                                 'cant_cajas': m_cant_cajas,
                                                                                 'turno': mi_turno_hora(m_hora),
                                                                                 'project_id': m_proyecto,
+                                                                                'uplote': row.Up + '-' + row.Subdiv,
                                                                                 'active': True}])
         m_ident = ident
     else:
@@ -420,7 +434,7 @@ for row in rows:
                                                                                 'sequence':10,
                                                                                 'product_qty': m_peso_caja1,
                                                                                 'product_uom_qty': m_peso_caja1,
-                                                                                'product_uom': 13,
+                                                                                'product_uom': 1,
                                                                                 'qty_received':m_peso_caja1,
                                                                                 'product_id': 2,
                                                                                 'price_unit': 0.00,
@@ -434,7 +448,6 @@ for row in rows:
                                                                                 'qty_received': 0.00,
                                                                                 'qty_received_manual': 0.00,
                                                                                 'partner_id': m_proveedor,
-                                                                                'currency_id': 16,
                                                                                 'active': True}])
     else:
         print("Si existe registro Secuencia:", m_secuencia)
@@ -454,7 +467,7 @@ for row in rows:
                                                                                 'sequence':20,
                                                                                 'product_qty': m_peso_caja2,
                                                                                 'product_uom_qty': m_peso_caja2,
-                                                                                'product_uom': 13,
+                                                                                'product_uom': 1,
                                                                                 'qty_received': m_peso_caja1,
                                                                                 'product_id': 2,
                                                                                 'price_unit': 0.00,
@@ -468,7 +481,6 @@ for row in rows:
                                                                                 'qty_received': 0.00,
                                                                                 'qty_received_manual': 0.00,
                                                                                 'partner_id': m_proveedor,
-                                                                                'currency_id': 16,
                                                                                 'active': True}])
     
 
