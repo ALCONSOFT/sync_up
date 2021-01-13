@@ -1,4 +1,6 @@
 import pyodbc
+from os import getenv
+#import pymssql
 import sys
 import xmlrpc.client
 import os
@@ -229,10 +231,10 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
 #################################################################
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
-#url = "http://odoradita.com:8069"
-#db = "test14_CADASA_Z_2021"
-url = "http://localhost:11014"
-db = "t14_PRUEBAS_B_02"
+#url = "http://odoradita.com:80"
+#db = "p14_CADASA_2020"
+url = "http://localhost:80"
+db = "p14_CADASA_2020"
 username = 'soporte@alconsoft.net'
 password = "2010Sistech"
 max_registros = 501
@@ -255,33 +257,54 @@ models.execute_kw(db, uid, password,
 
 ##########################################################################################################
 # CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
-# SQL SERVER
+# SQL SERVER POR PYODBC
 cadena_conex1 = "DRIVER={SQL Server};server=mssql.odoradita.com;database=CAMPO;uid=sa;pwd=crsJVA!_02x"
 conexion1 = pyodbc.connect(cadena_conex1)
 cursor1 = conexion1.cursor()
+
+# SQL POR PYMSSQL
+#server = 'mssql.odoradita.com'
+#user = 'sa'
+#password = 'crsJVA!_02x'
+#conn = pymssql.connect(server, user, password, "CAMPO")
+#cursor1 = conn.cursor()
+
 # - CONSULTA MS-SQL
-#SELECT Secuencia, Ano, FechaHoraCaptura, Placa, Tipo_Equipo, Tipo_Vehiculo, Contrato, Frente, Up, Proveedor, Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema
-#FROM CAMPO.dbo.GUI_GUIA_CANA;
-#
+#print("%s %s some static text %s!"%(var_1,var_2,var_3))
 consulta1a = "SELECT Secuencia, Ano, FechaHoraCaptura, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
 consulta1b = " Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs, "
 consulta1c = " Tipo_Alce, Alce1, Alce2, Epl_Alce1, Epl_Alce2, Montacargas, Epl_Montacarga, Tractor1, Tractor2, Epl_Tractor1, Epl_Tractor2, Nombre_Transportista, "
 consulta1d = " Num_Epl_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
 consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, Cerrado_Total, "
 consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
-consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
+#consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
+consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM CAMPO.dbo.GUI_GUIA_CANA"
-consulta3 = " WHERE Dia_Zafra >= 23 AND Ano = 2020 "
+consulta3a = " WHERE Dia_Zafra >="
+param_dia_zafra = "0"
+consulta3b = "AND Ano=" 
+param_ano = "2020"
+consulta3c = "AND Secuencia >="
+param_sec = "2020000001"
 #consulta3 = " WHERE Ano = 2020 "
 consulta4 = "ORDER BY Secuencia"
-consulta = consulta1 + consulta2 + consulta3 +consulta4
+consulta = "%s %s %s %s %s %s %s %s %s"%(consulta1, consulta2, consulta3a, param_dia_zafra, consulta3b, param_ano, consulta3c, param_sec, consulta4)
 print("Consulta MS-SQL: ", consulta)
+
 cursor1.execute(consulta)
 rows = cursor1.fetchall()
 m_zafra = mi_zafra(url, db, uid, password, '2020','2019-2020')
-
+ahora_a = datetime.now()
+i = 0
 for row in rows:
-    print(row.Secuencia, row.Ano, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
+    i+=1
+    ahora = datetime.now()
+    if i > 1:
+        delta = ahora - ahora_a
+        ahora_a = ahora
+    else:
+        delta = 0.0
+    print(i, ahora, delta, row.Ano, row.Dia_Zafra, row.Secuencia, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
     # INSERTAR REGISTROS EN TABLA purchase.order SI NO EXISTE.
     # print("Tipo de Sec." , type(row.Secuencia))
     m_secuencia = int(row.Secuencia)
