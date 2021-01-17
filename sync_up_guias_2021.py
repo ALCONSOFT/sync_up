@@ -10,6 +10,11 @@ import xlsxwriter
 from datetime import datetime
 import time
 
+def norma_none(lc_var1):
+    if not lc_var1:
+        return ''
+    else:
+        return lc_var1
 ########################################################################
 def mi_proyecto(url, db, uid, password, l_up, l_lot, l_proveedor):
     import xmlrpc.client
@@ -232,7 +237,7 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
 url = "http://odoradita.com:80"
-db = "t14_PRUEBAS_2021"
+db = "p14_CADASA_2021"
 #url = "http://localhost:80"
 #db = "p14_CADASA_2020"
 username = 'soporte@alconsoft.net'
@@ -273,19 +278,19 @@ cursor1 = conexion1.cursor()
 #print("%s %s some static text %s!"%(var_1,var_2,var_3))
 consulta1a = "SELECT Secuencia, Ano, FechaHoraCaptura, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipotipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
 consulta1b = " Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs, "
-consulta1c = " Tipo_Alce, Alce1, Alce2, Epl_Alce1, Epl_Alce2, Montacargas, Epl_Montacarga, Tractor1, Tractor2, Epl_Tractor1, Epl_Tractor2, Nombre_Transportista, "
-consulta1d = " Num_Epl_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
-consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, Cerrado_Total, "
+consulta1c = " Tipo_Alce, Alce1, Alce2, Empleado_Alce1, Empleado_Alce2, Montacargas, Empleado_Montacargas, Tractor1, Tractor2, Empleado_Tractor1, Empleado_Tractor2, Nombre_Transportista, "
+consulta1d = " Num_Empleado_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
+consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, CerradoTotal, "
 consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
 #consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
 consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM dbo.GUIA"
 consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "0"
+param_dia_zafra = "2"
 consulta3b = "AND Ano=" 
 param_ano = "2021"
 consulta3c = "AND Secuencia >"
-param_sec = "2021000001"
+param_sec = "2021000370"
 #consulta3 = " WHERE Ano = 2020 "
 consulta4 = "ORDER BY Secuencia"
 consulta = "%s %s %s %s %s %s %s %s %s"%(consulta1, consulta2, consulta3a, param_dia_zafra, consulta3b, param_ano, consulta3c, param_sec, consulta4)
@@ -293,7 +298,7 @@ print("Consulta MS-SQL: ", consulta)
 
 cursor1.execute(consulta)
 rows = cursor1.fetchall()
-m_zafra = mi_zafra(url, db, uid, password, '2020','2019-2020')
+m_zafra = mi_zafra(url, db, uid, password, '2021','2020-2021')
 ahora_a = datetime.now()
 i = 0
 for row in rows:
@@ -304,7 +309,7 @@ for row in rows:
         ahora_a = ahora
     else:
         delta = 0.0
-    print(i, ahora, delta, row.Ano, row.Dia_Zafra, row.Secuencia, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
+    print(i, ahora, delta, row.Ano, row.Dia_Zafra, row.Secuencia, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipotipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
     # INSERTAR REGISTROS EN TABLA purchase.order SI NO EXISTE.
     # print("Tipo de Sec." , type(row.Secuencia))
     m_secuencia = int(row.Secuencia)
@@ -374,7 +379,7 @@ for row in rows:
                                                                                 'up': m_up,
                                                                                 'lote': row.Subdiv,
                                                                                 'origin': row.Ticket,
-                                                                                'tipo_vehiculo': row.Tipo_Vehiculo,
+                                                                                'tipo_vehiculo': row.Tipotipo_Vehiculo,
                                                                                 'state': 'purchase',
                                                                                 'fecha_guia': row.Fecha_Guia,
                                                                                 'fecha_quema': row.Fecha_Quema,
@@ -392,27 +397,27 @@ for row in rows:
                                                                                 'tipo_alce': row.Tipo_Alce,
                                                                                 'alce1': row.Alce1,
                                                                                 'alce2': row.Alce2,
-                                                                                'epl_alce1': row.Epl_Alce1,
-                                                                                'epl_alce2': row.Epl_Alce2,
+                                                                                'epl_alce1': row.Empleado_Alce1,
+                                                                                'epl_alce2': row.Empleado_Alce2,
                                                                                 'montacargas': row.Montacargas,
-                                                                                'epl_montacarga': row.Epl_Montacarga,
+                                                                                'epl_montacarga': row.Empleado_Montacargas,
                                                                                 'tractor1': row.Tractor1,
                                                                                 'tractor2': row.Tractor2,
-                                                                                'epl_tractor1': row.Epl_Tractor1,
-                                                                                'epl_tractor2': row.Epl_Tractor2,
+                                                                                'epl_tractor1': row.Empleado_Tractor1,
+                                                                                'epl_tractor2': row.Empleado_Tractor2,
                                                                                 'nombre_tansportista': row.Nombre_Transportista,
-                                                                                'cha1': row.Cha1,
-                                                                                'tcha1': row.TCha1,
-                                                                                'cha2': row.Cha2,
-                                                                                'tcha2': row.TCha2,
-                                                                                'mula': row.Mula,
-                                                                                'tmula': row.TMula,
-                                                                                'chamula': row.ChaMula,
-                                                                                'tchamula': row.TChaMula,
-                                                                                'caja1': row.Caja1,
-                                                                                'tcaja1': row.TCaja1,
-                                                                                'caja2': row.Caja2,
-                                                                                'tcaja2': row.TCaja2,
+                                                                                'cha1': norma_none(row.Cha1),
+                                                                                'tcha1': norma_none(row.TCha1),
+                                                                                'cha2': norma_none(row.Cha2),
+                                                                                'tcha2': norma_none(row.TCha2),
+                                                                                'mula': norma_none(row.Mula),
+                                                                                'tmula': norma_none(row.TMula),
+                                                                                'chamula': norma_none(row.ChaMula),
+                                                                                'tchamula': norma_none(row.TChaMula),
+                                                                                'caja1': norma_none(row.Caja1),
+                                                                                'tcaja1': norma_none(row.TCaja1),
+                                                                                'caja2': norma_none(row.Caja2),
+                                                                                'tcaja2': norma_none(row.TCaja2),
                                                                                 'promedio': float(row.Promedio),
                                                                                 'detalle': row.Detalle,
                                                                                 'cerrado': row.Cerrado,
@@ -423,7 +428,7 @@ for row in rows:
                                                                                 'hora_salida': m_hora_Salida,
                                                                                 'incetivo_tl': m_incentivotl,
                                                                                 'incentivo_ti': row.IncentivoTI,
-                                                                                'cerrado_total': row.Cerrado_Total,                                                                                
+                                                                                'cerrado_total': row.CerradoTotal,                                                                                
                                                                                 'fecha_tiquete': row.Fecha_Tiquete,
                                                                                 'hora_tiquete': row.Hora_Tiquete,
                                                                                 'usuario_tiquete': row.Usuario_Tiquete,
