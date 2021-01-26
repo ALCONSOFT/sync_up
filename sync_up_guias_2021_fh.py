@@ -7,7 +7,8 @@ import os
 from datetime import datetime
 from openpyxl import Workbook
 import xlsxwriter
-from datetime import datetime
+from datetime import timedelta
+
 import time
 
 def norma_none(lc_var1):
@@ -282,18 +283,16 @@ consulta1c = " Tipo_Alce, Alce1, Alce2, Empleado_Alce1, Empleado_Alce2, Montacar
 consulta1d = " Num_Empleado_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
 consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, CerradoTotal, "
 consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
-#consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
 consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM dbo.GUIA"
-consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "11"
+consulta3a = " WHERE CONVERT(VARCHAR(20), FechahoraCaptura, 120) >="
+param_fhc = "'" + (datetime.now()-timedelta(hours=2)).isoformat(sep=' ',timespec='seconds') + "'"
 consulta3b = "AND Ano=" 
 param_ano = "2021"
-consulta3c = "AND Secuencia >"
-param_sec = "2021002230"
+#consulta3c = "AND Secuencia >"
 #consulta3 = " WHERE Ano = 2020 "
 consulta4 = "ORDER BY Secuencia"
-consulta = "%s %s %s %s %s %s %s %s %s"%(consulta1, consulta2, consulta3a, param_dia_zafra, consulta3b, param_ano, consulta3c, param_sec, consulta4)
+consulta = "%s %s %s %s %s %s %s "%(consulta1, consulta2, consulta3a, param_fhc, consulta3b, param_ano, consulta4)
 print("Consulta MS-SQL: ", consulta)
 
 cursor1.execute(consulta)
@@ -363,7 +362,7 @@ for row in rows:
     if registros != 0:
         m_ident = ids[0]
     if registros == 0:
-        #print("Registro : ",  filtro , "No existe!!!")
+        print("Registro : ",  filtro , "No existe!!! - Guardandolo en Odoo; Fecha-hora:", row.Fecha_Guia,"-",m_hora_entrada)
         #print("IDS: ", ids)
         ident = models.execute_kw(db, uid, password, 'purchase.order', 'create', [{ 'company_id': 1,
                                                                                 'currency_id': 16,
@@ -441,7 +440,7 @@ for row in rows:
                                                                                 'active': True}])
         m_ident = ident
     else:
-        print("Si existe registro Secuencia:", m_secuencia)
+        print("Secuencia:", m_secuencia, "Ya existe!")
     # Purchase Order line [Detalle]
 
     filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
