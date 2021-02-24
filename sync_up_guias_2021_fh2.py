@@ -7,7 +7,8 @@ import os
 from datetime import datetime
 from openpyxl import Workbook
 import xlsxwriter
-from datetime import datetime
+from datetime import timedelta
+
 import time
 
 def norma_none(lc_var1):
@@ -233,11 +234,30 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
                                                                                         'description': lc_zafra}])
          return ident
     else: return ids[0]
-#################################################################
+#### Equipo #####################################################
+def mi_equipo(url, db, uid, password, lc_contrato):
+    import xmlrpc.client
+    # Calliing methods
+    models_equi = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_equi.execute_kw(db, uid, password,
+                     'maintenance.equipment', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['codigo_activo', '=', lc_contrato], ['active','=',1]]]  #lista de python
+    registros = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search_count', filtro)
+    ids =       models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+        ident = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'create', [{ 'name': lc_contrato,
+                                                                                        'codigo_activo': lc_contrato,
+                                                                                        'active': 1,}])
+        return ident
+        #print("id_Odoo: ", ident)
+    else: return ids[0]
+###################################################################################
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
-url = "http://10.11.4.213:80"
-db = "p14_CADASA_2021"
+url = "http://test.odoradita.com:80"
+db = "t14_CADASA_2021"
 #url = "http://localhost:80"
 #db = "p14_CADASA_2020"
 username = 'soporte@alconsoft.net'
@@ -282,18 +302,16 @@ consulta1c = " Tipo_Alce, Alce1, Alce2, Empleado_Alce1, Empleado_Alce2, Montacar
 consulta1d = " Num_Empleado_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
 consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, CerradoTotal, "
 consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
-#consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
 consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM dbo.GUIA"
-consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "36"
+consulta3a = " WHERE CONVERT(VARCHAR(20), FechahoraCaptura, 120) >="
+param_fhc = "'" + (datetime.now()-timedelta(hours=2)).isoformat(sep=' ',timespec='seconds') + "'"
 consulta3b = "AND Ano=" 
 param_ano = "2021"
-consulta3c = "AND Secuencia >"
-param_sec = "2021008740"
+#consulta3c = "AND Secuencia >"
 #consulta3 = " WHERE Ano = 2020 "
 consulta4 = "ORDER BY Secuencia"
-consulta = "%s %s %s %s %s %s %s %s %s"%(consulta1, consulta2, consulta3a, param_dia_zafra, consulta3b, param_ano, consulta3c, param_sec, consulta4)
+consulta = "%s %s %s %s %s %s %s "%(consulta1, consulta2, consulta3a, param_fhc, consulta3b, param_ano, consulta4)
 print("Consulta MS-SQL: ", consulta)
 
 cursor1.execute(consulta)
@@ -323,6 +341,8 @@ for row in rows:
     m_proveedor = mi_proveedor(url, db, uid, password, row.Proveedor)
     # Proyecto
     m_proyecto = mi_proyecto(url, db, uid, password, row.Up, row.Subdiv, row.Proveedor)
+    # Contrato - Equipo de Acarreo
+    m_contrato = mi_equipo(url, db, uid, password, row.Contrato)
     # Bruto, Tara y Neto
     #print("Tipo Bruto: ", type(row.Bruto))
     # Lote Hora
@@ -363,7 +383,7 @@ for row in rows:
     if registros != 0:
         m_ident = ids[0]
     if registros == 0:
-        #print("Registro : ",  filtro , "No existe!!!")
+        print("Registro : ",  filtro , "No existe!!! - Guardandolo en Odoo; Fecha-hora:", row.Fecha_Guia,"-",m_hora_entrada)
         #print("IDS: ", ids)
         ident = models.execute_kw(db, uid, password, 'purchase.order', 'create', [{ 'company_id': 1,
                                                                                 'currency_id': 16,
@@ -441,7 +461,7 @@ for row in rows:
                                                                                 'active': True}])
         m_ident = ident
     else:
-        print("Si existe registro Secuencia:", m_secuencia)
+        print("Secuencia:", m_secuencia, "Ya existe!")
     # Purchase Order line [Detalle]
 
     filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
@@ -476,6 +496,10 @@ for row in rows:
                                                                                 'qty_received': 0.00,
                                                                                 'qty_received_manual': 0.00,
                                                                                 'partner_id': m_proveedor,
+                                                                                'caja': norma_none(row.Caja1),
+                                                                                'alce': row.Alce1,
+                                                                                'contrato': m_contrato,
+                                                                                'project_id': m_proyecto,
                                                                                 'active': True}])
     else:
         print("Si existe registro Secuencia:", m_secuencia)
@@ -509,6 +533,10 @@ for row in rows:
                                                                                 'qty_received': 0.00,
                                                                                 'qty_received_manual': 0.00,
                                                                                 'partner_id': m_proveedor,
+                                                                                'caja': norma_none(row.Caja2),
+                                                                                'alce': row.Alce2,
+                                                                                'contrato': m_contrato,
+                                                                                'project_id': m_proyecto,
                                                                                 'active': True}])
     
 

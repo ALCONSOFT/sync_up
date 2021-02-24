@@ -236,8 +236,8 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
 #################################################################
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
-url = "http://10.11.4.213:80"
-db = "p14_CADASA_2021"
+url = "http://test.odoradita.com:80"
+db = "t14_CADASA_2021"
 #url = "http://localhost:80"
 #db = "p14_CADASA_2020"
 username = 'soporte@alconsoft.net'
@@ -286,11 +286,11 @@ consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Ti
 consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM dbo.GUIA"
 consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "36"
+param_dia_zafra = "27"
 consulta3b = "AND Ano=" 
 param_ano = "2021"
 consulta3c = "AND Secuencia >"
-param_sec = "2021008740"
+param_sec = "2021006100"
 #consulta3 = " WHERE Ano = 2020 "
 consulta4 = "ORDER BY Secuencia"
 consulta = "%s %s %s %s %s %s %s %s %s"%(consulta1, consulta2, consulta3a, param_dia_zafra, consulta3b, param_ano, consulta3c, param_sec, consulta4)

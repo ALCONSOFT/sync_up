@@ -8,7 +8,7 @@ from datetime import datetime
 from openpyxl import Workbook
 import xlsxwriter
 from datetime import timedelta
-
+import winsound
 import time
 
 def norma_none(lc_var1):
@@ -234,11 +234,31 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
                                                                                         'description': lc_zafra}])
          return ident
     else: return ids[0]
+#### Equipo #####################################################
+def mi_equipo(url, db, uid, password, lc_contrato):
+    import xmlrpc.client
+    # Calliing methods
+    models_equi = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_equi.execute_kw(db, uid, password,
+                     'maintenance.equipment', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['codigo_activo', '=', lc_contrato], ['active','=',1]]]  #lista de python
+    registros = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search_count', filtro)
+    ids =       models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+        ident = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'create', [{ 'name': lc_contrato,
+                                                                                        'codigo_activo': lc_contrato,
+                                                                                        'active': 1,}])
+        return ident
+        #print("id_Odoo: ", ident)
+    else: return ids[0]
+###################################################################################
 
 ##################################################
 def mi_sync():
-    url = "http://odoradita.com:80"
-    db = "p14_CADASA_2021"
+    url = "http://test.odoradita.com:80"
+    db = "t14_CADASA_2021"
     #url = "http://localhost:80"
     #db = "p14_CADASA_2020"
     username = 'soporte@alconsoft.net'
@@ -323,6 +343,17 @@ def mi_sync():
         m_proveedor = mi_proveedor(url, db, uid, password, row.Proveedor)
         # Proyecto
         m_proyecto = mi_proyecto(url, db, uid, password, row.Up, row.Subdiv, row.Proveedor)
+        # Contrato - Equipo de Acarreo
+        m_contrato = mi_equipo(url, db, uid, password, norma_none(row.Contrato))
+        # Alce - Equipo de CyA
+        m_alce1 = mi_equipo(url, db, uid, password, norma_none(row.Alce1))
+        # Alce - Equipo de CyA
+        m_alce2 = mi_equipo(url, db, uid, password, norma_none(row.Alce2))
+        # Caja - Equipo Contenedor
+        m_caja1 = mi_equipo(url, db, uid, password, norma_none(row.Caja1))
+        # Caja - Equipo Contenedor
+        m_caja2 = mi_equipo(url, db, uid, password, norma_none(row.Caja2))
+
         # Bruto, Tara y Neto
         #print("Tipo Bruto: ", type(row.Bruto))
         # Lote Hora
@@ -338,7 +369,7 @@ def mi_sync():
         # ANALISIS DE CAJAS Y PESO
         if row.Tipo_Equipo == 'CAMION':
             list_cajas = ['CAJA1']
-            m_peso_caja1 = float(row.Neto_Lbs)
+            m_peso_caja1 = float(row.Neto_Ton)
             m_peso_caja2 = 0.00
         else:
             if row.Tipo_Equipo == 'TRACTOR' or row.Tipo_Equipo == 'MULA':
@@ -440,6 +471,14 @@ def mi_sync():
                                                                                     'uplote': row.Up + '-' + row.Subdiv,
                                                                                     'active': True}])
             m_ident = ident
+            # Sonido de registro Guardado!
+            
+            frequency = 2000
+            duration = 1000
+            winsound.Beep(frequency+500, duration-500)
+            winsound.Beep(frequency-250, duration-500)
+            winsound.Beep(frequency-350, duration-500)
+            winsound.Beep(frequency-650, duration-500)
         else:
             print("Secuencia:", m_secuencia, "Ya existe!")
         # Purchase Order line [Detalle]
@@ -476,6 +515,10 @@ def mi_sync():
                                                                                     'qty_received': 0.00,
                                                                                     'qty_received_manual': 0.00,
                                                                                     'partner_id': m_proveedor,
+                                                                                    'caja': norma_none(m_caja1),
+                                                                                    'alce': m_alce1,
+                                                                                    'contrato': m_contrato,
+                                                                                    'project_id': m_proyecto,
                                                                                     'active': True}])
         else:
             print("Si existe registro Secuencia:", m_secuencia)
@@ -509,6 +552,10 @@ def mi_sync():
                                                                                     'qty_received': 0.00,
                                                                                     'qty_received_manual': 0.00,
                                                                                     'partner_id': m_proveedor,
+                                                                                    'caja': norma_none(m_caja2),
+                                                                                    'alce': m_alce2,
+                                                                                    'contrato': m_contrato,
+                                                                                    'project_id': m_proyecto,
                                                                                     'active': True}])
         
 
