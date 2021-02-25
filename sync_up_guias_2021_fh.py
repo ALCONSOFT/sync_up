@@ -1,4 +1,5 @@
 ﻿import pyodbc
+import platform
 from os import getenv
 #import pymssql
 import sys
@@ -237,8 +238,8 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
 
 ##################################################
 def mi_sync():
-    url = "http://odoradita.com:80"
-    db = "p14_CADASA_2021"
+    url = "http://test.odoradita.com:80"
+    db = "t14_CADASA_2021"
     #url = "http://localhost:80"
     #db = "p14_CADASA_2020"
     username = 'soporte@alconsoft.net'
@@ -264,16 +265,17 @@ def mi_sync():
     ##########################################################################################################
     # CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
     # SQL SERVER POR PYODBC
-    cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
-    conexion1 = pyodbc.connect(cadena_conex1)
-    cursor1 = conexion1.cursor()
+    sistema = platform.system()
 
-    # SQL POR PYMSSQL
-    #server = 'mssql.odoradita.com'
-    #user = 'sa'
-    #password = 'crsJVA!_02x'
-    #conn = pymssql.connect(server, user, password, "CAMPO")
-    #cursor1 = conn.cursor()
+    if (sistema) == 'Linux':
+        print("Estamos en {}".format(sistema))
+        cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
+        cursor1 = cnn.cursor()
+    else:
+        print("Estamos en {}".format(sistema))
+        cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
+        conexion1 = pyodbc.connect(cadena_conex1)
+        cursor1 = conexion1.cursor()
 
     # - CONSULTA MS-SQL
     #print("%s %s some static text %s!"%(var_1,var_2,var_3))
@@ -326,6 +328,7 @@ def mi_sync():
         # Bruto, Tara y Neto
         #print("Tipo Bruto: ", type(row.Bruto))
         # Lote Hora
+        
         m_hora = str(row.FechaHoraCaptura.hour).zfill(2)
         m_lote_hora = mi_lote_hora(m_hora)
         if not row.Hora_Salida:
@@ -334,7 +337,8 @@ def mi_sync():
             m_hora_Salida = row.Hora_Salida
         if not row.IncentivoTL:
             m_incentivotl = 0
-        m_hora_entrada = row.Hora_Entrada[0:8]
+        #m_hora_entrada = row.Hora_Entrada[0:8]
+        m_hora_entrada = str(row.Hora_Entrada.hour) + ':' + str(row.Hora_Entrada.minute)
         # ANALISIS DE CAJAS Y PESO
         if row.Tipo_Equipo == 'CAMION':
             list_cajas = ['CAJA1']
@@ -387,7 +391,6 @@ def mi_sync():
                                                                                     'bruto': float(row.Bruto),
                                                                                     'tara': float(row.Tara),
                                                                                     'neto': float(row.Neto_Lbs),
-                                                                                    'date_order': m_fechahc,
                                                                                     'neto_ton': float(row.Neto_Ton)/0.907185,
                                                                                     'neto_tonl': float(row.Neto_Ton),
                                                                                     'ton1': float(row.Ton1)/0.907185,
@@ -438,7 +441,10 @@ def mi_sync():
                                                                                     'turno': mi_turno_hora(m_hora),
                                                                                     'project_id': m_proyecto,
                                                                                     'uplote': row.Up + '-' + row.Subdiv,
+                                                                                    'fechahoracaptura': m_fechahc,
+                                                                                    'date_order': m_fechahc,
                                                                                     'active': True}])
+                                                                                    #'date_order': row.FechaHoraCaptura,
             m_ident = ident
         else:
             print("Secuencia:", m_secuencia, "Ya existe!")

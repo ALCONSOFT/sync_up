@@ -1,4 +1,5 @@
 ﻿import pyodbc
+import platform
 from os import getenv
 #import pymssql
 import sys
@@ -237,7 +238,7 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
 url = "http://10.11.4.213:80"
-db = "p14_CADASA_2021"
+db = "t14_CADASA_2021_sync_up"
 #url = "http://localhost:80"
 #db = "p14_CADASA_2020"
 username = 'soporte@alconsoft.net'
@@ -263,16 +264,17 @@ models.execute_kw(db, uid, password,
 ##########################################################################################################
 # CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
 # SQL SERVER POR PYODBC
-cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
-conexion1 = pyodbc.connect(cadena_conex1)
-cursor1 = conexion1.cursor()
+sistema = platform.system()
 
-# SQL POR PYMSSQL
-#server = 'mssql.odoradita.com'
-#user = 'sa'
-#password = 'crsJVA!_02x'
-#conn = pymssql.connect(server, user, password, "CAMPO")
-#cursor1 = conn.cursor()
+if (sistema) == 'Linux':
+    print("Estamos en {}".format(sistema))
+    cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
+    cursor1 = cnn.cursor()
+else:
+    print("Estamos en {}".format(sistema))
+    cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
+    conexion1 = pyodbc.connect(cadena_conex1)
+    cursor1 = conexion1.cursor()
 
 # - CONSULTA MS-SQL
 #print("%s %s some static text %s!"%(var_1,var_2,var_3))
@@ -286,7 +288,7 @@ consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Ti
 consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM dbo.GUIA"
 consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "36"
+param_dia_zafra = "43"
 consulta3b = "AND Ano=" 
 param_ano = "2021"
 consulta3c = "AND Secuencia >"
@@ -334,7 +336,8 @@ for row in rows:
         m_hora_Salida = row.Hora_Salida
     if not row.IncentivoTL:
         m_incentivotl = 0
-    m_hora_entrada = row.Hora_Entrada[0:8]
+    #m_hora_entrada = row.Hora_Entrada[0:8]
+    m_hora_entrada = str(row.Hora_Entrada.hour) + ':' + str(row.Hora_Entrada.minute)
     # ANALISIS DE CAJAS Y PESO
     if row.Tipo_Equipo == 'CAMION':
         list_cajas = ['CAJA1']

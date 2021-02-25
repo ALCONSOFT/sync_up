@@ -1,3 +1,18 @@
+import platform
+import pyodbc
+
+sistema = platform.system()
+
+if (sistema) == 'Linux':
+    print("Estamos en {}".format(sistema))
+    cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
+    cursor1 = cnn.cursor()
+else:
+    print("Estamos en {}".format(sistema))
+    cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
+    conexion1 = pyodbc.connect(cadena_conex1)
+    cursor1 = conexion1.cursor()
+
 consulta1a = "SELECT Secuencia, Ano, FechaHoraCaptura, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipotipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
 consulta1b = " Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs, "
 consulta1c = " Tipo_Alce, Alce1, Alce2, Empleado_Alce1, Empleado_Alce2, Montacargas, Empleado_Montacargas, Tractor1, Tractor2, Empleado_Tractor1, Empleado_Tractor2, Nombre_Transportista, "
@@ -17,3 +32,6 @@ param_sec = "2021000001"
 consulta4 = "ORDER BY Secuencia"
 consulta = "%s %s %s %s %s %s %s %s %s"%(consulta1, consulta2, consulta3a, param_dia_zafra, consulta3b, param_ano, consulta3c, param_sec, consulta4)
 print("Consulta MS-SQL: ", consulta)
+cursor1.execute(consulta)
+rows = cursor1.fetchall()
+print('Registros de Consulta: ', rows)
