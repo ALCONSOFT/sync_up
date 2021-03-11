@@ -238,7 +238,7 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
 
 ##################################################
 def mi_sync():
-    url = "http://odoradita.com:80"
+    url = "http://10.11.4.213:80"
     db = "p14_CADASA_2021"
     #url = "http://localhost:80"
     #db = "p14_CADASA_2020"

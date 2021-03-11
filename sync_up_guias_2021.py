@@ -265,8 +265,8 @@ def mi_equipo(url, db, uid, password, lc_contrato):
 #################################################################
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
-url = "http://test.odoradita.com:80"
-db = "t14_CADASA_2021_sync_up1"
+url = "http://odoradita.com:80"
+db = "p14_CADASA_2021"
 #url = "http://localhost:80"
 #db = "p14_CADASA_2020"
 username = 'soporte@alconsoft.net'
@@ -318,7 +318,7 @@ consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Ti
 consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM dbo.GUIA"
 consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "1"
+param_dia_zafra = "57"
 consulta3b = "AND Ano=" 
 param_ano = "2021"
 consulta3c = "AND Secuencia >"
