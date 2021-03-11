@@ -330,6 +330,7 @@ print("Consulta MS-SQL: ", consulta)
 
 cursor1.execute(consulta)
 rows = cursor1.fetchall()
+##################################################################################################
 m_zafra = mi_zafra(url, db, uid, password, '2021','2020-2021')
 ahora_a = datetime.now()
 i = 0
