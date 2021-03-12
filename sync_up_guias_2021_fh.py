@@ -235,7 +235,25 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
                                                                                         'description': lc_zafra}])
          return ident
     else: return ids[0]
-
+def mi_equipo(url, db, uid, password, lc_contrato):
+    import xmlrpc.client
+    # Calliing methods
+    models_equi = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_equi.execute_kw(db, uid, password,
+                     'maintenance.equipment', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['codigo_activo', '=', lc_contrato], ['active','=',1]]]  #lista de python
+    registros = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search_count', filtro)
+    ids =       models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+        ident = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'create', [{ 'name': lc_contrato,
+                                                                                        'codigo_activo': lc_contrato,
+                                                                                        'active': 1,}])
+        return ident
+        #print("id_Odoo: ", ident)
+    else: return ids[0]
+###################################################################################
 ##################################################
 def mi_sync():
     url = "http://odoradita.com:80"
