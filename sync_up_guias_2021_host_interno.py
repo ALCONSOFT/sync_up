@@ -262,6 +262,25 @@ def mi_equipo(url, db, uid, password, lc_contrato):
         #print("id_Odoo: ", ident)
     else: return ids[0]
 ###################################################################################
+def mi_frente(url, db, uid, password, lc_frente)
+    import xmlrpc.client
+    # Calliing methods
+    models_fren = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models_fren.execute_kw(db, uid, password,
+                     'fincas_pma.frentes', 'check_access_rights',
+                     ['read'], {'raise_exception': False})
+    
+    filtro = [[['code_frente', '=', lc_frente], ['active','=',1]]]  #lista de python
+    registros = models_fren.execute_kw(db, uid, password, 'fincas_pma.frentes', 'search_count', filtro)
+    ids =       models_equi.execute_kw(db, uid, password, 'fincas_pma.frentes', 'search',       filtro, {'limit': 1})
+    if registros == 0:
+        ident = models_fren.execute_kw(db, uid, password, 'fincas_pma.frentes', 'create', [{ 'name': lc_frente,
+                                                                                        'codigo_activo': lc_frente,
+                                                                                        'active': 1,}])
+        return ident
+        #print("id_Odoo: ", ident)
+    else: return ids[0]
+###################################################################################
 #################################################################
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
@@ -365,6 +384,8 @@ for row in rows:
     m_caja1 = mi_equipo(url, db, uid, password, norma_none(row.Caja1))
     # Caja - Equipo Contenedor
     m_caja2 = mi_equipo(url, db, uid, password, norma_none(row.Caja2))
+    # Frente
+    m_frente = mi_frente(url, db, uid, password, norma_none(row.Frente))
 
     # Bruto, Tara y Neto
     #print("Tipo Bruto: ", type(row.Bruto))
@@ -421,7 +442,7 @@ for row in rows:
                                                                                 'placa': row.Placa,
                                                                                 'tipo_equipo': m_tipo_equipo,
                                                                                 'contrato': row.Contrato,
-                                                                                'frente': int(row.Frente),
+                                                                                'frente': int(m_frente),
                                                                                 'up': m_up,
                                                                                 'lote': row.Subdiv,
                                                                                 'origin': row.Ticket,
