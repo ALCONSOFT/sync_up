@@ -276,8 +276,10 @@ def mi_frente(url, db, uid, password, lc_frente):
 ###################################################################################
 ###################################################################################
 def mi_sync():
-    url = "http://10.11.4.213:80"
+    url = "http://odoradita.com:80"
     db = "p14_CADASA_2021"
+    #url = "http://10.11.4.213:80"
+    #db = "p14_CADASA_2021"
     #url = "http://localhost:80"
     #db = "p14_CADASA_2020"
     username = 'soporte@alconsoft.net'
