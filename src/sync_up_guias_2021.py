@@ -265,8 +265,8 @@ def mi_equipo(url, db, uid, password, lc_contrato):
 #################################################################
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
-url = "http://odoradita.com:80"
-db = "p14_CADASA_2021"
+url = "http://test.odoradita.com:80"
+db = "t14_CADASA_2021_sync_up1"
 #url = "http://localhost:80"
 #db = "p14_CADASA_2020"
 username = 'soporte@alconsoft.net'
@@ -296,13 +296,13 @@ sistema = platform.system()
 
 if (sistema) == 'Linux':
     print("Estamos en {}".format(sistema))
-    cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
-    #cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=mssql.odoradita.com;PORT=1433;DATABASE=master;UID=sa;PWD=crsJVA!_02x')
+    #cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
+    cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=mssql.odoradita.com;PORT=1433;DATABASE=master;UID=sa;PWD=crsJVA!_02x')
     cursor1 = cnn.cursor()
 else:
     print("Estamos en {}".format(sistema))
-    cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
-    #cadena_conex1 = "DRIVER={SQL Server};server=mssql.odoradita.com;database=master;uid=sa;pwd=crsJVA!_02x"
+    #cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
+    cadena_conex1 = "DRIVER={SQL Server};server=mssql.odoradita.com;database=master;uid=sa;pwd=crsJVA!_02x"
     conexion1 = pyodbc.connect(cadena_conex1)
     cursor1 = conexion1.cursor()
 
@@ -318,7 +318,7 @@ consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Ti
 consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
 consulta2 = "FROM dbo.GUIA"
 consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "57"
+param_dia_zafra = "1"
 consulta3b = "AND Ano=" 
 param_ano = "2021"
 consulta3c = "AND Secuencia >"
@@ -330,6 +330,7 @@ print("Consulta MS-SQL: ", consulta)
 
 cursor1.execute(consulta)
 rows = cursor1.fetchall()
+##################################################################################################
 m_zafra = mi_zafra(url, db, uid, password, '2021','2020-2021')
 ahora_a = datetime.now()
 i = 0
@@ -341,7 +342,7 @@ for row in rows:
         ahora_a = ahora
     else:
         delta = 0.0
-    print('->',i, ahora, delta, row.Contrato, row.Dia_Zafra, row.Secuencia, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipotipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
+    print(i, ahora, delta, row.Ano, row.Dia_Zafra, row.Secuencia, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipotipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
     # INSERTAR REGISTROS EN TABLA purchase.order SI NO EXISTE.
     # print("Tipo de Sec." , type(row.Secuencia))
     m_secuencia = int(row.Secuencia)

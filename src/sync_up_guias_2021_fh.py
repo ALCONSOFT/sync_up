@@ -6,8 +6,8 @@
 #     - 2021-03-09: AGREGANDO LAS CONSULTAS SQL EN FUNCIONES EN OTRO
 #       ARCHIVO .PY
 ########################################################################
-import platform
 import pyodbc
+import platform
 from os import getenv
 #import pymssql
 import sys
@@ -16,7 +16,8 @@ import os
 from datetime import datetime
 from openpyxl import Workbook
 import xlsxwriter
-from datetime import datetime
+from datetime import timedelta
+
 import time
 
 def norma_none(lc_var1):
@@ -242,94 +243,72 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
                                                                                         'description': lc_zafra}])
          return ident
     else: return ids[0]
-#### Equipo #####################################################
-def mi_equipo(url, db, uid, password, lc_contrato):
-    import xmlrpc.client
+
+##################################################
+def mi_sync():
+    url = "http://test.odoradita.com:80"
+    db = "t14_CADASA_2021"
+    #url = "http://localhost:80"
+    #db = "p14_CADASA_2020"
+    username = 'soporte@alconsoft.net'
+    password = "2010Sistech"
+    max_registros = 501
+    ###################################
+    os.system ("cls")
+    print("INICIANDO RUTINA DE SINCRONIZACION DE GUIAS")
+    common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+    print("common version: ")
+    print(common.version())
+
+    #User Identifier
+    uid = common.authenticate(db, username, password, {})
+    print("uid: ",uid)
+
     # Calliing methods
-    models_equi = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-    models_equi.execute_kw(db, uid, password,
-                     'maintenance.equipment', 'check_access_rights',
-                     ['read'], {'raise_exception': False})
-    
-    filtro = [[['codigo_activo', '=', lc_contrato], ['active','=',1]]]  #lista de python
-    registros = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search_count', filtro)
-    ids =       models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search',       filtro, {'limit': 1})
-    if registros == 0:
-        ident = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'create', [{ 'name': lc_contrato,
-                                                                                        'codigo_activo': lc_contrato,
-                                                                                        'active': 1,}])
-        return ident
-        #print("id_Odoo: ", ident)
-    else: return ids[0]
-###################################################################################
-#################################################################
-# PROGRAMA PRINCIPAL - ODOO 14                                  #
-#################################################################
-url = "http://odoradita.com:80"
-db = "p14_CADASA_2021"
-#url = "http://localhost:80"
-#db = "p14_CADASA_2020"
-username = 'soporte@alconsoft.net'
-password = "2010Sistech"
-max_registros = 501
-###################################
-os.system ("cls")
-print("INICIANDO RUTINA DE SINCRONIZACION DE GUIAS")
-common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
-print("common version: ")
-print(common.version())
+    models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    models.execute_kw(db, uid, password,
+                'res.partner', 'check_access_rights',
+                ['read'], {'raise_exception': False})
 
-#User Identifier
-uid = common.authenticate(db, username, password, {})
-print("uid: ",uid)
+    #########################################################################################################################################################################################
+    # CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
+    # SQL SERVER POR PYODBC
+    sistema = platform.system()
 
-# Calliing methods
-models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-models.execute_kw(db, uid, password,
-              'res.partner', 'check_access_rights',
-              ['read'], {'raise_exception': False})
+    if (sistema) == 'Linux':
+        print("Estamos en {}".format(sistema))
+        cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
+        cursor1 = cnn.cursor()
+    else:
+        print("Estamos en {}".format(sistema))
+        cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
+        conexion1 = pyodbc.connect(cadena_conex1)
+        cursor1 = conexion1.cursor()
 
-##########################################################################################################
-# CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
-# SQL SERVER POR PYODBC
-sistema = platform.system()
+    # - CONSULTA MS-SQL
+    #print("%s %s some static text %s!"%(var_1,var_2,var_3))
 
-if (sistema) == 'Linux':
-    print("Estamos en {}".format(sistema))
-    cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
-    #cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=mssql.odoradita.com;PORT=1433;DATABASE=master;UID=sa;PWD=crsJVA!_02x')
-    cursor1 = cnn.cursor()
-else:
-    print("Estamos en {}".format(sistema))
-    cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
-    #cadena_conex1 = "DRIVER={SQL Server};server=mssql.odoradita.com;database=master;uid=sa;pwd=crsJVA!_02x"
-    conexion1 = pyodbc.connect(cadena_conex1)
-    cursor1 = conexion1.cursor()
+    consulta1a = "SELECT Secuencia, Ano, FechaHoraCaptura, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipotipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
+    consulta1b = " Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs, "
+    consulta1c = " Tipo_Alce, Alce1, Alce2, Empleado_Alce1, Empleado_Alce2, Montacargas, Empleado_Montacargas, Tractor1, Tractor2, Empleado_Tractor1, Empleado_Tractor2, Nombre_Transportista, "
+    consulta1d = " Num_Empleado_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
+    consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, CerradoTotal, "
+    consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
+    consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
+    consulta2 = "FROM dbo.GUIA"
+    consulta3a = " WHERE CONVERT(VARCHAR(20), FechahoraCaptura, 120) >="
+    param_fhc = "'" + (datetime.now()-timedelta(hours=2)).isoformat(sep=' ',timespec='seconds') + "'"
+    consulta3b = "AND Ano=" 
+    param_ano = "2021"
+    #consulta3c = "AND Secuencia >"
+    #consulta3 = " WHERE Ano = 2020 "
+    consulta4 = "ORDER BY Secuencia"
+    consulta = "%s %s %s %s %s %s %s "%(consulta1, consulta2, consulta3a, param_fhc, consulta3b, param_ano, consulta4)
+    print("Consulta MS-SQL: ", consulta)
 
-# - CONSULTA MS-SQL
-#print("%s %s some static text %s!"%(var_1,var_2,var_3))
-consulta1a = "SELECT Secuencia, Ano, FechaHoraCaptura, convert(varchar, FechaHoraCaptura,21) as FechaHC, Placa, Tipo_Equipo, Tipotipo_Vehiculo, Contrato, Frente, Up, Proveedor, "
-consulta1b = " Subdiv, Fecha_Guia, Fecha_Quema, Hora_Quema, Ticket, Bruto, Tara, Neto_Lbs, "
-consulta1c = " Tipo_Alce, Alce1, Alce2, Empleado_Alce1, Empleado_Alce2, Montacargas, Empleado_Montacargas, Tractor1, Tractor2, Empleado_Tractor1, Empleado_Tractor2, Nombre_Transportista, "
-consulta1d = " Num_Empleado_Transportista, Neto_Ton, Ton1, Ton2, Cha1, TCha1, Cha2, TCha2, Mula, TMula, ChaMula, TChaMula, Caja1, TCaja1, Caja2, TCaja2, "
-consulta1e = " Promedio, Dia_Zafra, Detalle, Cerrado, Eliminado, Usuario_Guia, Procesado_Contabilidad, Ticket, Hora_Entrada, Hora_Salida, CerradoTotal, "
-consulta1f = " IncentivoTL, IncentivoTI, Fecha_Tiquete, Hora_Tiquete, Usuario_Tiquete, Origen_Tiquete, Cana "
-#consulta1 = consulta1a + consulta1b + consulta1c + consulta1d + consulta1e + consulta1f
-consulta1 = "%s %s %s %s %s %s"%(consulta1a, consulta1b, consulta1c, consulta1d, consulta1e, consulta1f)
-consulta2 = "FROM dbo.GUIA"
-consulta3a = " WHERE Dia_Zafra >="
-param_dia_zafra = "57"
-consulta3b = "AND Ano=" 
-param_ano = "2021"
-consulta3c = "AND Secuencia >"
-param_sec = "2021000001"
-#consulta3 = " WHERE Ano = 2020 "
-consulta4 = "ORDER BY Secuencia"
-consulta = "%s %s %s %s %s %s %s %s %s"%(consulta1, consulta2, consulta3a, param_dia_zafra, consulta3b, param_ano, consulta3c, param_sec, consulta4)
-print("Consulta MS-SQL: ", consulta)
-
-cursor1.execute(consulta)
-rows = cursor1.fetchall()
+    cursor1.execute(consulta)
+    rows = cursor1.fetchall()
+#########################################################################
 m_zafra = mi_zafra(url, db, uid, password, '2021','2020-2021')
 ahora_a = datetime.now()
 i = 0
@@ -341,7 +320,7 @@ for row in rows:
         ahora_a = ahora
     else:
         delta = 0.0
-    print('->',i, ahora, delta, row.Contrato, row.Dia_Zafra, row.Secuencia, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipotipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
+    print(i, ahora, delta, row.Ano, row.Dia_Zafra, row.Secuencia, row[2], row.Placa, row.Tipo_Equipo, row.Frente, row.Proveedor, row.Tipotipo_Vehiculo, row.Fecha_Guia, row.Neto_Lbs)
     # INSERTAR REGISTROS EN TABLA purchase.order SI NO EXISTE.
     # print("Tipo de Sec." , type(row.Secuencia))
     m_secuencia = int(row.Secuencia)
@@ -568,5 +547,13 @@ for row in rows:
 
 #'zafra': row.Ano,
 print("########## FIN DE RUTINA DE SINCRONIZACION DE GUIAS ############")
-
+ 
+#########################################################################
+# PROGRAMA PRINCIPAL - ODOO 14                                  #
+#################################################################
+# CICLO SIN FIN
+i = 1
+while True:
+    print('Ciclo: ',i)
+    mi_sync()
 ############ fin de programa sincronizador ##########

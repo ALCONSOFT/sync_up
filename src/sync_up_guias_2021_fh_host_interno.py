@@ -1,5 +1,4 @@
 ﻿import pyodbc
-import platform
 from os import getenv
 #import pymssql
 import sys
@@ -235,28 +234,10 @@ def mi_zafra(url, db, uid, password, lc_czafra, lc_name):
                                                                                         'description': lc_zafra}])
          return ident
     else: return ids[0]
-def mi_equipo(url, db, uid, password, lc_contrato):
-    import xmlrpc.client
-    # Calliing methods
-    models_equi = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-    models_equi.execute_kw(db, uid, password,
-                     'maintenance.equipment', 'check_access_rights',
-                     ['read'], {'raise_exception': False})
-    
-    filtro = [[['codigo_activo', '=', lc_contrato], ['active','=',1]]]  #lista de python
-    registros = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search_count', filtro)
-    ids =       models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'search',       filtro, {'limit': 1})
-    if registros == 0:
-        ident = models_equi.execute_kw(db, uid, password, 'maintenance.equipment', 'create', [{ 'name': lc_contrato,
-                                                                                        'codigo_activo': lc_contrato,
-                                                                                        'active': 1,}])
-        return ident
-        #print("id_Odoo: ", ident)
-    else: return ids[0]
-###################################################################################
+
 ##################################################
 def mi_sync():
-    url = "http://odoradita.com:80"
+    url = "http://10.11.4.213:80"
     db = "p14_CADASA_2021"
     #url = "http://localhost:80"
     #db = "p14_CADASA_2020"
@@ -283,17 +264,16 @@ def mi_sync():
     ##########################################################################################################
     # CONSULTA DE MS-SQL EN MSSQL.ODORADTA.COM - GUIAS DE CAÑA
     # SQL SERVER POR PYODBC
-    sistema = platform.system()
+    cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
+    conexion1 = pyodbc.connect(cadena_conex1)
+    cursor1 = conexion1.cursor()
 
-    if (sistema) == 'Linux':
-        print("Estamos en {}".format(sistema))
-        cnn = pyodbc.connect('DRIVER=FreeTDS;SERVER=10.11.4.5;PORT=1433;DATABASE=CONTROPE;UID=ecampo;PWD=Tormenta12')
-        cursor1 = cnn.cursor()
-    else:
-        print("Estamos en {}".format(sistema))
-        cadena_conex1 = "DRIVER={SQL Server};server=10.11.4.5;database=CONTROPE;uid=ecampo;pwd=Tormenta12"
-        conexion1 = pyodbc.connect(cadena_conex1)
-        cursor1 = conexion1.cursor()
+    # SQL POR PYMSSQL
+    #server = 'mssql.odoradita.com'
+    #user = 'sa'
+    #password = 'crsJVA!_02x'
+    #conn = pymssql.connect(server, user, password, "CAMPO")
+    #cursor1 = conn.cursor()
 
     # - CONSULTA MS-SQL
     #print("%s %s some static text %s!"%(var_1,var_2,var_3))
@@ -318,7 +298,6 @@ def mi_sync():
 
     cursor1.execute(consulta)
     rows = cursor1.fetchall()
-    ###--------------------------------------------->>>>>>>>>>>>>>>>>>>
     m_zafra = mi_zafra(url, db, uid, password, '2021','2020-2021')
     ahora_a = datetime.now()
     i = 0
@@ -344,17 +323,6 @@ def mi_sync():
         m_proveedor = mi_proveedor(url, db, uid, password, row.Proveedor)
         # Proyecto
         m_proyecto = mi_proyecto(url, db, uid, password, row.Up, row.Subdiv, row.Proveedor)
-        # Contrato - Equipo de Acarreo
-        m_contrato = mi_equipo(url, db, uid, password, norma_none(row.Contrato))
-        # Alce - Equipo de CyA
-        m_alce1 = mi_equipo(url, db, uid, password, norma_none(row.Alce1))
-        # Alce - Equipo de CyA
-        m_alce2 = mi_equipo(url, db, uid, password, norma_none(row.Alce2))
-        # Caja - Equipo Contenedor
-        m_caja1 = mi_equipo(url, db, uid, password, norma_none(row.Caja1))
-        # Caja - Equipo Contenedor
-        m_caja2 = mi_equipo(url, db, uid, password, norma_none(row.Caja2))
-
         # Bruto, Tara y Neto
         #print("Tipo Bruto: ", type(row.Bruto))
         # Lote Hora
@@ -366,14 +334,11 @@ def mi_sync():
             m_hora_Salida = row.Hora_Salida
         if not row.IncentivoTL:
             m_incentivotl = 0
-        if (sistema) == 'Linux':
-            m_hora_entrada = str(row.Hora_Entrada.hour) + ':' + str(row.Hora_Entrada.minute)
-        else:
-            m_hora_entrada = row.Hora_Entrada[0:8]
+        m_hora_entrada = row.Hora_Entrada[0:8]
         # ANALISIS DE CAJAS Y PESO
         if row.Tipo_Equipo == 'CAMION':
             list_cajas = ['CAJA1']
-            m_peso_caja1 = float(row.Neto_Ton)
+            m_peso_caja1 = float(row.Neto_Lbs)
             m_peso_caja2 = 0.00
         else:
             if row.Tipo_Equipo == 'TRACTOR' or row.Tipo_Equipo == 'MULA':
@@ -398,7 +363,7 @@ def mi_sync():
         if registros != 0:
             m_ident = ids[0]
         if registros == 0:
-            #print("Registro : ",  filtro , "No existe!!!")
+            print("Registro : ",  filtro , "No existe!!! - Guardandolo en Odoo; Fecha-hora:", row.Fecha_Guia,"-",m_hora_entrada)
             #print("IDS: ", ids)
             ident = models.execute_kw(db, uid, password, 'purchase.order', 'create', [{ 'company_id': 1,
                                                                                     'currency_id': 16,
@@ -476,7 +441,7 @@ def mi_sync():
                                                                                     'active': True}])
             m_ident = ident
         else:
-            print("Si existe registro Secuencia:", m_secuencia)
+            print("Secuencia:", m_secuencia, "Ya existe!")
         # Purchase Order line [Detalle]
 
         filtro = [[['secuencia_guia', '=', m_secuencia],['active','=',True]]]  #lista de python
@@ -511,10 +476,6 @@ def mi_sync():
                                                                                     'qty_received': 0.00,
                                                                                     'qty_received_manual': 0.00,
                                                                                     'partner_id': m_proveedor,
-                                                                                    'caja': norma_none(m_caja1),
-                                                                                    'alce': m_alce1,
-                                                                                    'contrato': m_contrato,
-                                                                                    'project_id': m_proyecto,
                                                                                     'active': True}])
         else:
             print("Si existe registro Secuencia:", m_secuencia)
@@ -548,16 +509,11 @@ def mi_sync():
                                                                                     'qty_received': 0.00,
                                                                                     'qty_received_manual': 0.00,
                                                                                     'partner_id': m_proveedor,
-                                                                                    'caja': norma_none(m_caja2),
-                                                                                    'alce': m_alce2,
-                                                                                    'contrato': m_contrato,
-                                                                                    'project_id': m_proyecto,
                                                                                     'active': True}])
         
 
     #'zafra': row.Ano,
     print("########## FIN DE RUTINA DE SINCRONIZACION DE GUIAS ############")
-    ###------------------------------------------<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 #################################################################
 # PROGRAMA PRINCIPAL - ODOO 14                                  #
 #################################################################
